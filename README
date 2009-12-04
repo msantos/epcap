@@ -1,0 +1,49 @@
+
+An Erlang interface to libpcap using a port driver.
+
+epcap includes a small example program called sniff.
+
+
+QUICK SETUP
+
+cd epcap
+make
+
+# Allow your user to ecap with root privs
+sudo visudo
+youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
+
+erl -pa ebin
+% Use your interface, or leave it out and trust in pcap
+sniff:start([{interface, "eth0"},{chroot,"priv/tmp"}]).
+
+
+USAGE
+
+epcap:start() -> pid()
+epcap:start(Args) -> pid()
+
+    Types   Args = [Options]
+            Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, integer()} |
+                        {user, string()} | {filter, string()} | {progname, string()}
+
+
+SCREENSHOT
+
+2009-12-03 23:16:29 =======================================
+SRC:{207,97,227,239}:80 (0:18:84:xx:xx:xx)
+DST:{192,168,2,1}:61825 (0:1C:B3:xx:xx:xx)
+Flags ["ack","psh"] seq 3734484738, ack 2753096068, win 46, length 492
+HTTP/1.1 301 Moved Permanently..Server: nginx/0.7.61..Date: Thu, 03 Dec 2009 22:16:29 GMT..Content-Type: text/html; charset=utf-8..Connection
+: close..Status: 301 Moved Permanently..Location: http://github.com/dashboard..X-Runtime: 0ms..Content-Length: 93..Set-Cookie: _github_ses=BA
+h7BiIKZmxhc2hJQzonQWN0aW9uQ29udHJvbGxlcjo6Rmxhc2g6OkZsYXNoSGFzaHsABjoKQHVzZWR7AA%3D%3D--884981fc5aa85daf318eeff084d98e2cff92578f; path=/; exp
+ires=Wed, 01 Jan 2020 08:00:00 GMT; HttpOnly..Cache-Control: no-cache
+
+
+TODO
+
+Lots: reorganize and clean up the code, not everything works yet. 
+
+Maybe switch the port driver to a gen_event.
+
+
