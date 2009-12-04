@@ -42,7 +42,7 @@
         ether_addr/1,
         icmp/1,
         ipv4/1,
-        payload/1
+        payload/1,
         tcp/1,
         tcp_flags/1,
         udp/1

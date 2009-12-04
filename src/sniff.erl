@@ -48,7 +48,11 @@ loop() ->
                 P -> dump(Time, P)
             catch
                 error:Error ->
-                    io:format("~s *** Error decoding packet (~p) ***~n~p~n", [timestamp(Time), Error, Packet])
+                    io:format("~s *** Error decoding packet ***~n~p~n~p~n~p~n", [
+                            timestamp(Time),
+                            Error,
+                            erlang:get_stacktrace(),
+                            Packet])
             end,
             loop();
         stop ->

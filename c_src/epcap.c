@@ -86,12 +86,7 @@ main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if (argc == 1) {
-        IS_NULL(ep->filt = strdup(argv[0]));
-    }
-    else {
-        IS_NULL(ep->filt = strdup(EPCAP_FILTER));
-    }
+    IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
 
     IS_NULL(ep->p = epcap_open(ep->dev, ep->promisc));
     if (epcap_priv_drop(ep) != 0)
@@ -149,6 +144,7 @@ epcap_open(char *dev, int promisc)
     return (p);
 }
 
+
     int
 epcap_init(EPCAP_STATE *ep)
 {
@@ -180,6 +176,7 @@ epcap_init(EPCAP_STATE *ep)
 
 }
 
+
     void
 epcap_loop(pcap_t *p)
 {
@@ -194,6 +191,7 @@ epcap_loop(pcap_t *p)
         epcap_response(pkt, &hdr);
     }
 }
+
 
     void
 epcap_response(const u_char *pkt, struct pcap_pkthdr *hdr)
@@ -239,11 +237,12 @@ usage(EPCAP_STATE *ep)
 {
     (void)fprintf(stderr, "%s, %s\n", __progname, EPCAP_VERSION);
     (void)fprintf(stderr,
-            "usage: epcap <options>\n"
+            "usage: %s <options>\n"
             "              -d <directory>   chroot directory\n"
             "              -g <group>       unprivileged group\n"
             "              -u <user>        unprivileged user\n"
-            "              -v               display debuggin info\n"
+            "              -v               verbose mode\n",
+            __progname
             );
 
     exit (EXIT_FAILURE);
