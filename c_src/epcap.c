@@ -105,11 +105,11 @@ main(int argc, char *argv[])
             pcap_close(ep->p);
             epcap_watch();
             (void)kill(pid, SIGTERM);
+
+            free(ep->filt);
+            free(ep);
             break;
     }
-
-    free(ep->filt);
-    free(ep);
 
     exit (0);
 }
