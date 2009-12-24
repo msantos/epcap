@@ -46,6 +46,12 @@
 #define MAXBUFLEN       4096    /* Largest message accepted on stdin */
 #define PKTLENHDR       2       /* 2 byte packet length header */
 
+#define SNAPLEN         65535
+#define PROMISC         1       /* true */
+#define TIMEOUT         500     /* ms */
+
+#define EPCAP_FILTER    "tcp and port 80"
+
 #define PCAP_ERRBUF(x) do { \
     if ((x) == NULL) \
     errx(EXIT_FAILURE, "%s: %s", #x, errbuf); \
@@ -82,9 +88,11 @@ extern char *__progname;
 
 
 typedef struct {
-    pcap_t *p;           /* pcap handle */
+    pcap_t *p;          /* pcap handle */
     int promisc;        /* promiscuous mode */
     int verbose;        /* debugging messages */
+    size_t snaplen;     /* packet capture length */
+    u_int32_t timeout;  /* capture timeout */
     char *filt;         /* packet filter */
     char *dev;          /* device to snoop */
     char *user;         /* run as unprivileged user */

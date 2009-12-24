@@ -33,13 +33,7 @@
 
 #include "epcap.h"
 
-#define SNAPLEN         65535
-#define PROMISC         1       /* true */
-#define TIMEOUT         500     /* ms */
-
-#define EPCAP_FILTER    "tcp and port 80"
-
-pcap_t *epcap_open(char *dev, int promisc);
+int epcap_open(EPCAP_STATE *ep);
 int epcap_init(EPCAP_STATE *ep);
 void epcap_loop(pcap_t *p);
 void epcap_response(const u_char *pkt, struct pcap_pkthdr *hdr);
@@ -57,7 +51,10 @@ main(int argc, char *argv[])
 
     IS_NULL(ep = (EPCAP_STATE *)calloc(1, sizeof(EPCAP_STATE)));
 
-    while ( (ch = getopt(argc, argv, "d:g:hi:Pu:v")) != -1) {
+    ep->snaplen = SNAPLEN;
+    ep->timeout = TIMEOUT;
+
+    while ( (ch = getopt(argc, argv, "d:g:hi:Ps:t:u:v")) != -1) {
         switch (ch) {
             case 'd':   /* chroot directory */
                 IS_NULL(ep->chroot = strdup(optarg));
@@ -70,6 +67,12 @@ main(int argc, char *argv[])
                 break;
             case 'P':
                 ep->promisc = 1;
+                break;
+            case 's':
+                ep->snaplen = (size_t)atoi(optarg);
+                break;
+            case 't':
+                ep->timeout = (u_int32_t)atoi(optarg);
                 break;
             case 'u':
                 IS_NULL(ep->user = strdup(optarg));
@@ -88,7 +91,7 @@ main(int argc, char *argv[])
 
     IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
 
-    IS_NULL(ep->p = epcap_open(ep->dev, ep->promisc));
+    IS_LTZERO(epcap_open(ep));
     if (epcap_priv_drop(ep) != 0)
         exit (1);
 
@@ -129,19 +132,18 @@ epcap_watch()
 }
 
 
-    pcap_t *
-epcap_open(char *dev, int promisc)
+    int
+epcap_open(EPCAP_STATE *ep)
 {
-    pcap_t *p = NULL;
     char errbuf[PCAP_ERRBUF_SIZE];
 
 
-    if (dev == NULL)
-        PCAP_ERRBUF(dev = pcap_lookupdev(errbuf));
+    if (ep->dev == NULL)
+        PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
 
-    PCAP_ERRBUF(p = pcap_open_live(dev, SNAPLEN, promisc, TIMEOUT, errbuf));
+    PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen, ep->promisc, ep->timeout, errbuf));
 
-    return (p);
+    return (0);
 }
 
 
@@ -204,6 +206,13 @@ epcap_response(const u_char *pkt, struct pcap_pkthdr *hdr)
     IS_FALSE(ei_x_new_with_version(&msg));
     IS_FALSE(ei_x_encode_list_header(&msg, 2));
 
+    /* {pkthdr, {{time, Time}, {caplen, CapLength}, {len, ActualLength}}} */
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
+    IS_FALSE(ei_x_encode_atom(&msg, "pkthdr"));
+
+    /* { */
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 3));
+
     /* {time, {MegaSec, Sec, MicroSec}} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
     IS_FALSE(ei_x_encode_atom(&msg, "time"));
@@ -212,6 +221,18 @@ epcap_response(const u_char *pkt, struct pcap_pkthdr *hdr)
     IS_FALSE(ei_x_encode_long(&msg, abs(hdr->ts.tv_sec / 1000000)));
     IS_FALSE(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
     IS_FALSE(ei_x_encode_long(&msg, hdr->ts.tv_usec));
+
+    /* {caplen, CaptureLength}} */
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
+    IS_FALSE(ei_x_encode_atom(&msg, "caplen"));
+    IS_FALSE(ei_x_encode_long(&msg, hdr->caplen));
+
+    /* {len, ActualLength}} */
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
+    IS_FALSE(ei_x_encode_atom(&msg, "len"));
+    IS_FALSE(ei_x_encode_long(&msg, hdr->len));
+
+    /* } */
 
     /* {packet, Packet} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
@@ -239,8 +260,12 @@ usage(EPCAP_STATE *ep)
     (void)fprintf(stderr,
             "usage: %s <options>\n"
             "              -d <directory>   chroot directory\n"
+            "              -i <interface>   interface to snoop\n"
+            "              -P               promiscuous mode\n"
             "              -g <group>       unprivileged group\n"
             "              -u <user>        unprivileged user\n"
+            "              -s <length>      packet capture length\n"
+            "              -t <millisecond> capture timeout\n"
             "              -v               verbose mode\n",
             __progname
             );

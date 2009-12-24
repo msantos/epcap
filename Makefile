@@ -24,7 +24,7 @@ epcap: epcap.o epcap_priv.o
 	@$(CC) $(CFLAGS) $(ARCH) c_src/epcap.o $(LDFLAGS) -o priv/$@ c_src/epcap_priv.o
 
 %.o: c_src/%.c
-	gcc $(CFLAGS) $(CPPFLAGS) -o c_src/$@ -c $<
+	gcc $(ARCH) $(CFLAGS) $(CPPFLAGS) -o c_src/$@ -c $<
 
 clean:  
 	@rm -fv ebin/*.beam c_src/*.o

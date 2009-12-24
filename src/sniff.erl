@@ -43,7 +43,7 @@ start(L) ->
 
 loop() ->
     receive
-        [{time, Time},{packet, Packet}] ->
+        [{pkthdr, {{time, Time},_,_}},{packet, Packet}] ->
             try epcap_net:decapsulate(Packet) of
                 P -> dump(Time, P)
             catch

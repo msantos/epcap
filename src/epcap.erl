@@ -76,6 +76,9 @@ make_args(PL) ->
             interface,
             promiscuous,
             user,
+            snaplen,
+            timeout,
+
             filter
         ], proplists:lookup(Arg, PL) /= none ],
     " ").
@@ -83,7 +86,9 @@ make_args(PL) ->
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
 get_switch({group, Arg})        -> "-g " ++ Arg;
 get_switch({interface, Arg})    -> "-i " ++ Arg;
-get_switch({promiscuous, Arg})  -> "-P " ++ Arg;
+get_switch({promiscuous, Arg})  -> "-P";
+get_switch({snaplen, Arg})      -> "-s " ++ integer_to_list(Arg);
+get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);
 get_switch({user, Arg})         -> "-u " ++ Arg;
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
