@@ -30,16 +30,16 @@
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(epcap).
 
--export([start/0, start/1, stop/0]).
+-export([start/0, start/1, start/2, stop/0]).
 
 -define(PROGNAME, "sudo priv/epcap").
 
 start() ->
-    start([]).
-start(PL) when is_list(PL) ->
-    Args = make_args(PL),
-    Port = Args,
-    Pid = self(),
+    start(self(), []).
+start(PL) ->
+    start(self(), PL).
+start(Pid, PL) when is_list(PL) ->
+    Port = make_args(PL),
     spawn_link(fun() -> init(Pid, Port) end).
 stop() ->
     ?MODULE ! stop.
@@ -86,10 +86,11 @@ make_args(PL) ->
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
 get_switch({group, Arg})        -> "-g " ++ Arg;
 get_switch({interface, Arg})    -> "-i " ++ Arg;
-get_switch({promiscuous, Arg})  -> "-P";
+get_switch({promiscuous, true}) -> "-P";
 get_switch({snaplen, Arg})      -> "-s " ++ integer_to_list(Arg);
 get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);
 get_switch({user, Arg})         -> "-u " ++ Arg;
+get_switch({verbose, _Arg})     -> "-v";
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
 
