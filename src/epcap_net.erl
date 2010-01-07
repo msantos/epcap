@@ -82,12 +82,12 @@ proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;
 proto(?IPPROTO_UDP) -> udp.
 
-ether(<<Dhost:6/bytes, Shost:6/bytes, Type:2/bytes, Packet/binary>>) ->
-    Len = byte_size(Packet) - 4,
-    <<Payload:Len/bytes, CRC:4/bytes>> = Packet,
+ether(<<Dhost:6/bytes, Shost:6/bytes, Type:2/bytes, Payload/binary>>) ->
+%    Len = byte_size(Packet) - 4,
+%    <<Payload:Len/bytes, CRC:4/bytes>> = Packet,
     {#ether{
         dhost = Dhost, shost = Shost,
-        type = Type, crc = CRC
+        type = Type
     }, Payload}.
 
 ipv4(
