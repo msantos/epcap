@@ -32,6 +32,12 @@
 
 -include("epcap_net.hrl").
 
+-define(ETHERHDRLEN, 16).
+-define(IPV4HDRLEN, 20).
+-define(TCPHDRLEN, 20).
+-define(UDPHDRLEN, 8).
+-define(ICMPHDRLEN, 8).
+
 -export([
         checksum/1,
         checksum/3,
@@ -43,6 +49,7 @@
         icmp/1,
         ipv4/1,
         payload/1,
+        proto/1,
         tcp/1,
         tcp_flags/1,
         udp/1
@@ -50,12 +57,26 @@
 
 -define(is_print(C), C >= $ , C =< $~).
 
+decapsulate(P) when byte_size(P) < ?ETHERHDRLEN ->
+    invalid_packet;
+decapsulate(P) when byte_size(P) < ?ETHERHDRLEN + ?IPV4HDRLEN ->
+    {EtherHdr, EtherData} = ether(P),
+    [EtherHdr, {truncated, EtherData}, <<>>, <<>>];
 decapsulate(P) ->
     {EtherHdr, EtherData} = ether(P),
     {IPHdr, IPData} = ipv4(EtherData),
-    Proto = proto(IPHdr#ipv4.p),
-    {Hdr, Payload} = ?MODULE:Proto(IPData),
+    {Hdr, Payload} = decapsulate(proto(IPHdr#ipv4.p), (IPData)),
     [EtherHdr, IPHdr, Hdr, Payload].
+
+decapsulate(tcp, Packet) when byte_size(Packet) >= ?TCPHDRLEN ->
+    tcp(Packet);
+decapsulate(udp, Packet) when byte_size(Packet) >= ?UDPHDRLEN ->
+    udp(Packet);
+decapsulate(icmp, Packet) when byte_size(Packet) >= ?ICMPHDRLEN ->
+    icmp(Packet);
+decapsulate(_, Packet) ->
+    {{truncated, Packet}, <<>>}.
+
 
 proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;

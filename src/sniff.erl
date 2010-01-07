@@ -1,4 +1,4 @@
-%% Copyright (c) 2009, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %% 
 %% Redistribution and use in source and binary forms, with or without
@@ -28,37 +28,91 @@
 %% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
-
 -module(sniff).
+-behaviour(gen_server).
+
 -include("epcap_net.hrl").
 
--export([start/0, start/1]).
+-define(SERVER, ?MODULE).
+
+-export([start_link/0,start/0,start/1,stop/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+        terminate/2, code_change/3]).
 
 
 start() ->
-    start([{filter, "tcp and port 80"}, {interface, "en1"}, {chroot, "priv/tmp"}]).
-start(L) ->
-    epcap:start(L),
-    loop().
+    start([{filter, "tcp and port 80"},
+            {interface, "en1"},
+            {chroot, "priv/tmp"}]).
+start(Arg) when is_list(Arg) ->
+    gen_server:call(?SERVER, {start, Arg}).
 
-loop() ->
-    receive
-        [{pkthdr, {{time, Time},_,_}},{packet, Packet}] ->
-            try epcap_net:decapsulate(Packet) of
-                P -> dump(Time, P)
-            catch
-                error:Error ->
-                    io:format("~s *** Error decoding packet ***~n~p~n~p~n~p~n", [
-                            timestamp(Time),
-                            Error,
-                            erlang:get_stacktrace(),
-                            Packet])
-            end,
-            loop();
-        stop ->
-            ok
-    end.
+stop() ->
+    gen_server:call(?SERVER, stop).
 
+start_link() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+
+%%
+%% gen_server callbacks
+%%
+init([]) ->
+    {ok, waiting}.
+
+handle_call({start, Arg}, _From, waiting) ->
+    epcap:start(Arg),
+    {reply, ok, sniffing};
+handle_call({start, Arg}, _From, sniffing) ->
+    epcap:stop(),
+    epcap:start(Arg),
+    {reply, ok, sniffing};
+handle_call(stop, _From, sniffing) ->
+    epcap:stop(),
+    {reply, ok, waiting}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info([{pkthdr, {{time, Time},{caplen, CapLen},{len, Len}}}, {packet, Packet}], State) ->
+    [Ether, IP, Hdr, Payload] = epcap_net:decapsulate(Packet),
+    error_logger:info_report([
+            {time, timestamp(Time)},
+            {caplen,CapLen},
+            {len,Len},
+
+            % Source 
+            {source_macaddr, string:join(epcap_net:ether_addr(Ether#ether.shost), ":")},
+            {source_address, IP#ipv4.saddr},
+            {source_port, port(sport, Hdr)},
+
+            % Destination 
+            {destination_macaddr, string:join(epcap_net:ether_addr(Ether#ether.dhost), ":")},
+            {destination_address, IP#ipv4.daddr},
+            {destination_port, port(dport, Hdr)},
+
+            {protocol, epcap_net:proto(IP#ipv4.p)},
+            {protocol_header, header(Hdr)},
+
+            {payload_bytes, byte_size(Payload)},
+            {payload, epcap_net:payload(Payload)}
+
+        ]),
+    {noreply, State};
+% WTF?
+handle_info(Info, State) ->
+    error_logger:error_report([wtf, Info]),
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+
+%% 
+%% Internal functions
+%% 
 timestamp(Now) when is_tuple(Now) ->
     iso_8601_fmt(calendar:now_to_local_time(Now)).
 
@@ -67,29 +121,23 @@ iso_8601_fmt(DateTime) ->
     lists:flatten(io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
             [Year, Month, Day, Hour, Min, Sec])).
 
-dump(Time, [Ether, IP, Hdr, Payload]) ->
-    io:format("~s =======================================~n", [timestamp(Time)]), 
-    io:format("SRC:~p~s (~s)~nDST:~p~s (~s)~n", [
-            IP#ipv4.saddr, port(sport, Hdr), string:join(epcap_net:ether_addr(Ether#ether.shost), ":"),
-            IP#ipv4.daddr, port(dport, Hdr), string:join(epcap_net:ether_addr(Ether#ether.dhost), ":")
-        ]),
-    proto(Hdr),
-    io:format("length ~p~n~s~n", [byte_size(Payload), epcap_net:payload(Payload)]).
+header(#tcp{} = Hdr) ->
+    [{flags, epcap_net:tcp_flags(Hdr)},
+        {seq, Hdr#tcp.seqno},
+        {ack, Hdr#tcp.ackno},
+        {win, Hdr#tcp.win}];
+header(#udp{} = Hdr) ->
+    [{ulen, Hdr#udp.ulen}];
+header(#icmp{} = Hdr) ->
+    [{type, Hdr#icmp.type},
+        {code, Hdr#icmp.code}];
+header(Packet) ->
+    Packet.
 
-proto(#tcp{} = Hdr) ->
-    io:format("Flags ~p seq ~p, ack ~p, win ~p, ", [
-            epcap_net:tcp_flags(Hdr),
-            Hdr#tcp.seqno, Hdr#tcp.ackno, Hdr#tcp.win
-        ]);
-proto(#udp{} = Hdr) ->
-    io:format("ulen ~p, ", [ Hdr#udp.ulen ]);
-proto(#icmp{} = Hdr) ->
-    io:format("type ~p code ~p, ", [ Hdr#icmp.type, Hdr#icmp.code ]).
-
-port(sport, #tcp{sport = SPort}) -> ":" ++ integer_to_list(SPort);
-port(sport, #udp{sport = SPort}) -> ":" ++ integer_to_list(SPort);
-port(dport, #tcp{dport = DPort}) -> ":" ++ integer_to_list(DPort);
-port(dport, #udp{dport = DPort}) -> ":" ++ integer_to_list(DPort);
+port(sport, #tcp{sport = SPort}) -> SPort;
+port(sport, #udp{sport = SPort}) -> SPort;
+port(dport, #tcp{dport = DPort}) -> DPort;
+port(dport, #udp{dport = DPort}) -> DPort;
 port(_,_) -> "".
 
 
