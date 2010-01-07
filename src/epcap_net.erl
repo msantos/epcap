@@ -136,9 +136,6 @@ tcp(
 tcp_offset(N) when N > 5 -> (N - 5) * 4;
 tcp_offset(_) -> 0.
 
-% Appears some optimization is stripping the padding off the options
-tcp_options(Offset, Payload) when Offset > byte_size(Payload) ->
-    {Payload, <<>>};
 tcp_options(Offset, Payload) when Offset > 0 ->
     <<Opt:Offset/bytes, Msg/binary>> = Payload,
     {Opt, Msg};
