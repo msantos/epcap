@@ -21,7 +21,7 @@ sniff:start_link().
 sniff:start([{interface, "eth0"},{chroot,"priv/tmp"}]).
 
 % To change the filter
-sniff:start([{filter, "icmp or (tcp and port 80)},{interface, "eth0"},{chroot,"priv/tmp"}]).
+sniff:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"},{chroot,"priv/tmp"}]).
 
 % To stop sniffing
 sniff:stop().
