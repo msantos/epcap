@@ -9,7 +9,7 @@ QUICK SETUP
 cd epcap
 make
 
-# Allow your user to ecap with root privs
+# Allow your user to epcap with root privs
 sudo visudo
 youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
 
