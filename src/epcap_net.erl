@@ -61,32 +61,23 @@
 decapsulate(P) when byte_size(P) < ?ETHERHDRLEN ->
     invalid_packet;
 decapsulate(P) ->
-    {EtherType, EtherHdr, EtherData} = ether(P),
-    case truncated(EtherType, byte_size(P)) of
+    {EtherHdr, EtherData} = ether(P),
+    case truncated(EtherHdr#ether.type, byte_size(P)) of
 	true ->
 	    [EtherHdr, {truncated, EtherData}, <<>>, <<>>];
 
 	false ->
-	    decapsulate(EtherType, EtherHdr, EtherData)
+	    decapsulate(EtherHdr, EtherData)
     end.
 
-truncated(?ETHTYPE_IPV4, Size) ->
-    Size < ?ETHERHDRLEN + ?IPV4HDRLEN;
-truncated(?ETHTYPE_IPV6, 0) -> %% Jumbo payload
-    false;
-truncated(?ETHTYPE_IPV6, Size) ->
-    Size < ?ETHERHDRLEN + ?IPV6HDRLEN;
-truncated(_EtherType, _Size) ->
-    false.
-
-decapsulate(?ETHTYPE_IPV4, EtherHdr, EtherData) ->
+decapsulate(#ether{type = ?ETHTYPE_IPV4} = EtherHdr, EtherData) ->
     {IPHdr, IPData} = ipv4(EtherData),
-    {Hdr, Payload} = decapsulate(proto(IPHdr#ipv4.p), (IPData)),
+    {Hdr, Payload} = decapsulate(proto(IPHdr#ipv4.p), IPData),
     [EtherHdr, IPHdr, Hdr, Payload];
-decapsulate(?ETHTYPE_IPV6, _EtherHdr, _EtherData) ->
-    {unsupported, {ethertype, 'IPv6'}};
-decapsulate(EtherType, _EtherHdr, _EtherData) ->
-    {unsupported, {ethertype, EtherType}}.
+decapsulate(#ether{type = ?ETHTYPE_IPV6}, _EtherData) ->
+    {unsupported, {ethertype, ipv6}};
+decapsulate(#ether{type = EtherType}, _EtherData) ->
+    {unsupported, {ethertype, EtherType}};
 
 decapsulate(tcp, Packet) when byte_size(Packet) >= ?TCPHDRLEN ->
     tcp(Packet);
@@ -97,15 +88,24 @@ decapsulate(icmp, Packet) when byte_size(Packet) >= ?ICMPHDRLEN ->
 decapsulate(_, Packet) ->
     {{truncated, Packet}, <<>>}.
 
+truncated(?ETHTYPE_IPV4, Size) ->
+    Size < ?ETHERHDRLEN + ?IPV4HDRLEN;
+truncated(?ETHTYPE_IPV6, 0) -> %% Jumbo payload
+    false;
+truncated(?ETHTYPE_IPV6, Size) ->
+    Size < ?ETHERHDRLEN + ?IPV6HDRLEN;
+truncated(_EtherType, _Size) ->
+    false.
+
 
 proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;
 proto(?IPPROTO_UDP) -> udp.
 
-ether(<<Dhost:6/bytes, Shost:6/bytes, Type:2/bytes, Payload/binary>>) ->
+ether(<<Dhost:6/bytes, Shost:6/bytes, Type:16, Payload/binary>>) ->
 %    Len = byte_size(Packet) - 4,
 %    <<Payload:Len/bytes, CRC:4/bytes>> = Packet,
-    {Type, #ether{
+    {#ether{
        dhost = Dhost, shost = Shost,
        type = Type
       }, Payload}.

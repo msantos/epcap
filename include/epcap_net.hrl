@@ -1,6 +1,6 @@
 %% From http://en.wikipedia.org/wiki/EtherType
--define(ETHTYPE_IPV4, <<8, 0>>).     %% 0x0800
--define(ETHTYPE_IPV6, <<134, 221>>). %% 0x86DD
+-define(ETHTYPE_IPV4, 16#0800).
+-define(ETHTYPE_IPV6, 16#86DD).
 
 -define(IPPROTO_IP, 0). 
 -define(IPPROTO_ICMP, 1). 
