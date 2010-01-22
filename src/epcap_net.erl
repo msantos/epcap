@@ -111,7 +111,7 @@ ether(<<Dhost:6/bytes, Shost:6/bytes, Type:16, Payload/binary>>) ->
       }, Payload}.
 
 ipv4(
-    <<V:4, HL:4, ToS:8, Len:16, 
+    <<4:4, HL:4, ToS:8, Len:16, 
     Id:16, 0:1, DF:1, MF:1, %% RFC791 states it's a MUST
     Off:13, TTL:8, P:8, Sum:16,
     SA1:8, SA2:8, SA3:8, SA4:8,
@@ -126,7 +126,7 @@ ipv4(
 
     {#ipv4{
         valid = Valid,
-        v = V, hl = HL, tos = ToS, len = Len,
+        hl = HL, tos = ToS, len = Len,
         id = Id, df = DF, mf = MF,
         off = Off, ttl = TTL, p = P, sum = Sum,
         saddr = {SA1,SA2,SA3,SA4},
