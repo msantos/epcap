@@ -34,6 +34,7 @@
 
 -define(ETHERHDRLEN, 16).
 -define(IPV4HDRLEN, 20).
+-define(IPV6HDRLEN, 40).
 -define(TCPHDRLEN, 20).
 -define(UDPHDRLEN, 8).
 -define(ICMPHDRLEN, 8).
@@ -59,14 +60,33 @@
 
 decapsulate(P) when byte_size(P) < ?ETHERHDRLEN ->
     invalid_packet;
-decapsulate(P) when byte_size(P) < ?ETHERHDRLEN + ?IPV4HDRLEN ->
-    {EtherHdr, EtherData} = ether(P),
-    [EtherHdr, {truncated, EtherData}, <<>>, <<>>];
 decapsulate(P) ->
-    {EtherHdr, EtherData} = ether(P),
+    {EtherType, EtherHdr, EtherData} = ether(P),
+    case truncated(EtherType, byte_size(P)) of
+	true ->
+	    [EtherHdr, {truncated, EtherData}, <<>>, <<>>];
+
+	false ->
+	    decapsulate(EtherType, EtherHdr, EtherData)
+    end.
+
+truncated(?ETHTYPE_IPV4, Size) ->
+    Size < ?ETHERHDRLEN + ?IPV4HDRLEN;
+truncated(?ETHTYPE_IPV6, 0) -> %% Jumbo payload
+    false;
+truncated(?ETHTYPE_IPV6, Size) ->
+    Size < ?ETHERHDRLEN + ?IPV6HDRLEN;
+truncated(_EtherType, _Size) ->
+    false.
+
+decapsulate(?ETHTYPE_IPV4, EtherHdr, EtherData) ->
     {IPHdr, IPData} = ipv4(EtherData),
     {Hdr, Payload} = decapsulate(proto(IPHdr#ipv4.p), (IPData)),
-    [EtherHdr, IPHdr, Hdr, Payload].
+    [EtherHdr, IPHdr, Hdr, Payload];
+decapsulate(?ETHTYPE_IPV6, _EtherHdr, _EtherData) ->
+    {unsupported, {ethertype, 'IPv6'}};
+decapsulate(EtherType, _EtherHdr, _EtherData) ->
+    {unsupported, {ethertype, EtherType}}.
 
 decapsulate(tcp, Packet) when byte_size(Packet) >= ?TCPHDRLEN ->
     tcp(Packet);
@@ -85,14 +105,14 @@ proto(?IPPROTO_UDP) -> udp.
 ether(<<Dhost:6/bytes, Shost:6/bytes, Type:2/bytes, Payload/binary>>) ->
 %    Len = byte_size(Packet) - 4,
 %    <<Payload:Len/bytes, CRC:4/bytes>> = Packet,
-    {#ether{
-        dhost = Dhost, shost = Shost,
-        type = Type
-    }, Payload}.
+    {Type, #ether{
+       dhost = Dhost, shost = Shost,
+       type = Type
+      }, Payload}.
 
 ipv4(
     <<V:4, HL:4, ToS:8, Len:16, 
-    Id:16, _RF:1, DF:1, MF:1, 
+    Id:16, 0:1, DF:1, MF:1, %% RFC791 states it's a MUST
     Off:13, TTL:8, P:8, Sum:16,
     SA1:8, SA2:8, SA3:8, SA4:8,
     DA1:8, DA2:8, DA3:8, DA4:8,
