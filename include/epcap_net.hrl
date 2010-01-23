@@ -33,6 +33,13 @@
         saddr = {127,0,0,1}, daddr = {127,0,0,1}
     }). 
 
+-record(ipv6, {
+        valid = false,
+        v = 6, class = 0, flow = 0, 
+        len = 40, next = 0, hop = 0,
+        saddr, daddr
+    }). 
+
 -record(tcp, {
         valid = false,
         sport = 0, dport = 0,

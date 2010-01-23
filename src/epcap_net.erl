@@ -47,8 +47,10 @@
         valid/1,
         ether/1,
         ether_addr/1,
+        ether_type/1,
         icmp/1,
         ipv4/1,
+        ipv6/1,
         payload/1,
         proto/1,
         tcp/1,
@@ -58,49 +60,43 @@
 
 -define(is_print(C), C >= $ , C =< $~).
 
-decapsulate(P) when byte_size(P) < ?ETHERHDRLEN ->
-    invalid_packet;
-decapsulate(P) ->
-    {EtherHdr, EtherData} = ether(P),
-    case truncated(EtherHdr#ether.type, byte_size(P)) of
-	true ->
-	    [EtherHdr, {truncated, EtherData}, <<>>, <<>>];
 
-	false ->
-	    decapsulate(EtherHdr, EtherData)
-    end.
+decapsulate(Data) ->
+    decapsulate({ether, Data}, []).
 
-decapsulate(#ether{type = ?ETHTYPE_IPV4} = EtherHdr, EtherData) ->
-    {IPHdr, IPData} = ipv4(EtherData),
-    {Hdr, Payload} = decapsulate(proto(IPHdr#ipv4.p), IPData),
-    [EtherHdr, IPHdr, Hdr, Payload];
-decapsulate(#ether{type = ?ETHTYPE_IPV6}, _EtherData) ->
-    {unsupported, {ethertype, ipv6}};
-decapsulate(#ether{type = EtherType}, _EtherData) ->
-    {unsupported, {ethertype, EtherType}};
+decapsulate(stop, Packet) ->
+    lists:reverse(Packet);
+decapsulate({unsupported, Data}, Packet) ->
+    decapsulate(stop, [{unsupported, Data}|Packet]);
+decapsulate({ether, Data}, Packet) when byte_size(Data) >= ?ETHERHDRLEN ->
+    {Hdr, Payload} = ether(Data),
+    decapsulate({ether_type(Hdr#ether.type), Payload}, [Hdr|Packet]);
+decapsulate({ipv4, Data}, Packet) when byte_size(Data) >= ?IPV4HDRLEN ->
+    {Hdr, Payload} = ipv4(Data),
+    decapsulate({proto(Hdr#ipv4.p), Payload}, [Hdr|Packet]);
+decapsulate({ipv6, Data}, Packet) when byte_size(Data) >= ?IPV6HDRLEN ->
+    {Hdr, Payload} = ipv6(Data),
+    decapsulate({proto(Hdr#ipv6.next), Payload}, [Hdr|Packet]);
+decapsulate({tcp, Data}, Packet) when byte_size(Data) >= ?TCPHDRLEN ->
+    {Hdr, Payload} = tcp(Data),
+    decapsulate(stop, [Payload, Hdr|Packet]);
+decapsulate({udp, Data}, Packet) when byte_size(Data) >= ?UDPHDRLEN ->
+    {Hdr, Payload} = udp(Data),
+    decapsulate(stop, [Payload, Hdr|Packet]);
+decapsulate({icmp, Data}, Packet) when byte_size(Data) >= ?ICMPHDRLEN ->
+    {Hdr, Payload} = icmp(Data),
+    decapsulate(stop, [Payload, Hdr|Packet]);
+decapsulate({_, Data}, Packet) ->
+    decapsulate(stop, [{truncated, Data}|Packet]).
 
-decapsulate(tcp, Packet) when byte_size(Packet) >= ?TCPHDRLEN ->
-    tcp(Packet);
-decapsulate(udp, Packet) when byte_size(Packet) >= ?UDPHDRLEN ->
-    udp(Packet);
-decapsulate(icmp, Packet) when byte_size(Packet) >= ?ICMPHDRLEN ->
-    icmp(Packet);
-decapsulate(_, Packet) ->
-    {{truncated, Packet}, <<>>}.
-
-truncated(?ETHTYPE_IPV4, Size) ->
-    Size < ?ETHERHDRLEN + ?IPV4HDRLEN;
-truncated(?ETHTYPE_IPV6, 0) -> %% Jumbo payload
-    false;
-truncated(?ETHTYPE_IPV6, Size) ->
-    Size < ?ETHERHDRLEN + ?IPV6HDRLEN;
-truncated(_EtherType, _Size) ->
-    false.
-
+ether_type(?ETHTYPE_IPV4) -> ipv4;
+ether_type(?ETHTYPE_IPV6) -> ipv6;
+ether_type(_) -> unsupported.
 
 proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;
-proto(?IPPROTO_UDP) -> udp.
+proto(?IPPROTO_UDP) -> udp;
+proto(_) -> unsupported.
 
 ether(<<Dhost:6/bytes, Shost:6/bytes, Type:16, Payload/binary>>) ->
 %    Len = byte_size(Packet) - 4,
@@ -131,6 +127,20 @@ ipv4(
         off = Off, ttl = TTL, p = P, sum = Sum,
         saddr = {SA1,SA2,SA3,SA4},
         daddr = {DA1,DA2,DA3,DA4}
+    }, Payload}.
+
+ipv6(
+    <<6:6, Class:8, Flow:20,
+    Len:16, Next:8, Hop:8,
+    Src:128,
+    Dst:128,
+    Payload/binary>>
+) ->
+    {#ipv6{
+        valid = false,
+        class = Class, flow = Flow,
+        len = Len, next = Next, hop = Hop,
+        saddr = Src, daddr = Dst
     }, Payload}.
 
 tcp(
