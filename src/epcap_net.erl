@@ -130,7 +130,7 @@ ipv4(
     }, Payload}.
 
 ipv6(
-    <<6:6, Class:8, Flow:20,
+    <<6:4, Class:8, Flow:20,
     Len:16, Next:8, Hop:8,
     Src:128,
     Dst:128,
