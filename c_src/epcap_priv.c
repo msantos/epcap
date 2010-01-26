@@ -39,7 +39,7 @@
 
 #define EPCAP_CHROOT    "/var/empty"
 
-#define SETVAR(x, y)    ((x) = ((x) == NULL) ? (y) : (x))
+#define SETVAR(x, y)    ((x) = ((x) == NULL ? (y) : (x)))
 
 
     int
