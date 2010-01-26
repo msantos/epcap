@@ -72,11 +72,6 @@
     errx(EXIT_FAILURE, "%s", #x); \
 } while (0);
 
-#define PCAP_ERR(x) do { \
-    if ((x) != 0) \
-    errx(EXIT_FAILURE, "%s: %s", #x, pcap_geterr(p)); \
-} while (0);
-
 #define VERBOSE(x, ...) do { \
     if (ep->verbose >= x) { \
         (void)fprintf (stderr, __VA_ARGS__); \
