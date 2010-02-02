@@ -115,10 +115,7 @@ ipv4(
     Payload/binary>> = Raw
 ) ->
     <<Hdr:160/bitstring, _/binary>> = Raw,
-    Valid = case makesum(Hdr) of
-        0 -> true;
-        _ -> false
-    end,
+    Valid = makesum(Hdr) =:= 0,
 
     {#ipv4{
         valid = Valid,

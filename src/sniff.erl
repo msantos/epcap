@@ -121,16 +121,16 @@ iso_8601_fmt(DateTime) ->
     lists:flatten(io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
             [Year, Month, Day, Hour, Min, Sec])).
 
-header(#tcp{} = Hdr) ->
+header(#tcp{ackno = Ackno, seqno = Seqno, win = Win} = Hdr) ->
     [{flags, epcap_net:tcp_flags(Hdr)},
-        {seq, Hdr#tcp.seqno},
-        {ack, Hdr#tcp.ackno},
-        {win, Hdr#tcp.win}];
-header(#udp{} = Hdr) ->
-    [{ulen, Hdr#udp.ulen}];
-header(#icmp{} = Hdr) ->
-    [{type, Hdr#icmp.type},
-        {code, Hdr#icmp.code}];
+        {seq, Seqno},
+        {ack, Ackno},
+        {win, Win}];
+header(#udp{ulen = Ulen} = Hdr) ->
+    [{ulen, Ulen}];
+header(#icmp{code = Code, type = Type} = Hdr) ->
+    [{type, Type},
+        {code, Code}];
 header(Packet) ->
     Packet.
 
