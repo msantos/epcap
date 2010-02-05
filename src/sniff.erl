@@ -126,9 +126,9 @@ header(#tcp{ackno = Ackno, seqno = Seqno, win = Win} = Hdr) ->
         {seq, Seqno},
         {ack, Ackno},
         {win, Win}];
-header(#udp{ulen = Ulen} = Hdr) ->
+header(#udp{ulen = Ulen}) ->
     [{ulen, Ulen}];
-header(#icmp{code = Code, type = Type} = Hdr) ->
+header(#icmp{code = Code, type = Type}) ->
     [{type, Type},
         {code, Code}];
 header(Packet) ->
