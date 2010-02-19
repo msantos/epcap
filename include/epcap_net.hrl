@@ -2,8 +2,8 @@
 -define(ETHTYPE_IPV4, 16#0800).
 -define(ETHTYPE_IPV6, 16#86DD).
 
--define(IPPROTO_IP, 0). 
--define(IPPROTO_ICMP, 1). 
+-define(IPPROTO_IP, 0).
+-define(IPPROTO_ICMP, 1).
 -define(IPPROTO_TCP, 6).
 -define(IPPROTO_UDP, 17).
 
@@ -27,18 +27,18 @@
 
 -record(ipv4, {
         valid = false,
-        v = 4, hl = 5, tos = 0, len = 20, 
-        id, df = 0, mf = 0, 
+        v = 4, hl = 5, tos = 0, len = 20,
+        id, df = 0, mf = 0,
         off = 0, ttl = 0, p = ?IPPROTO_TCP, sum = 0,
         saddr = {127,0,0,1}, daddr = {127,0,0,1}
-    }). 
+    }).
 
 -record(ipv6, {
         valid = false,
-        v = 6, class = 0, flow = 0, 
+        v = 6, class = 0, flow = 0,
         len = 40, next = 0, hop = 0,
         saddr, daddr
-    }). 
+    }).
 
 -record(tcp, {
         valid = false,
@@ -49,12 +49,12 @@
             psh = 0, rst = 0, syn = 0, fin = 0, win = 0,
         sum, urp = 0,
         opt = <<>>
-    }). 
+    }).
 
 -record(udp, {
         valid = false,
         sport = 0, dport = 0, ulen = 0, sum = 0
-    }). 
+    }).
 
 -record(icmp, {
         valid,
