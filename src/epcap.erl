@@ -31,8 +31,8 @@
 -module(epcap).
 
 -export([start/0, start/1, start/2, stop/0]).
+-export([progname/0]).
 
--define(PROGNAME, "sudo priv/epcap").
 
 start() ->
     start(self(), []).
@@ -69,7 +69,7 @@ loop(Caller, Port) ->
     end.
 
 make_args(PL) ->
-    proplists:get_value(progname, PL, ?PROGNAME) ++ " " ++
+    proplists:get_value(progname, PL, "sudo " ++ progname()) ++ " " ++
     string:join([ get_switch(proplists:lookup(Arg, PL)) || Arg <- [
             chroot,
             group,
@@ -92,5 +92,13 @@ get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);
 get_switch({user, Arg})         -> "-u " ++ Arg;
 get_switch({verbose, _Arg})     -> "-v";
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
+
+progname() ->
+    filename:join([
+            filename:dirname(code:which(?MODULE)),
+            "..",
+            "priv",
+            ?MODULE
+        ]).
 
 
