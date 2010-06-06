@@ -89,8 +89,8 @@ decapsulate({icmp, Data}, Packet) when byte_size(Data) >= ?ICMPHDRLEN ->
 decapsulate({_, Data}, Packet) ->
     decapsulate(stop, [{truncated, Data}|Packet]).
 
-ether_type(?ETHTYPE_IPV4) -> ipv4;
-ether_type(?ETHTYPE_IPV6) -> ipv6;
+ether_type(?ETH_P_IP) -> ipv4;
+ether_type(?ETH_P_IPV6) -> ipv6;
 ether_type(_) -> unsupported.
 
 proto(?IPPROTO_ICMP) -> icmp;
