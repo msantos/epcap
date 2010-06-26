@@ -286,7 +286,7 @@ icmp(#icmp{
 
 % Echo or Echo Reply Message
 icmp(<<Type:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>)
-when Type =:= ?ICMP_ECHO; Type =:= ?ICMP_ECHO_REPLY ->
+when Type =:= ?ICMP_ECHO; Type =:= ?ICMP_ECHOREPLY ->
     {#icmp{
         type = Type, code = Code, checksum = Checksum, id = Id,
         sequence = Sequence
@@ -295,7 +295,7 @@ icmp(#icmp{
         type = Type, code = Code, checksum = Checksum, id = Id,
         sequence = Sequence
     })
-when Type =:= ?ICMP_ECHO; Type =:= ?ICMP_ECHO_REPLY ->
+when Type =:= ?ICMP_ECHO; Type =:= ?ICMP_ECHOREPLY ->
     <<Type:8, Code:8, Checksum:16, Id:16, Sequence:16>>;
 
 % Timestamp or Timestamp Reply Message
