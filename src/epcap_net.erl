@@ -345,8 +345,7 @@ checksum(Hdr) ->
 % TCP pseudoheader checksum
 checksum(#ipv4{
         saddr = {SA1,SA2,SA3,SA4},
-        daddr = {DA1,DA2,DA3,DA4},
-        p = Protocol
+        daddr = {DA1,DA2,DA3,DA4}
     },
     #tcp{
         off = Off
@@ -364,7 +363,7 @@ checksum(#ipv4{
                 <<SA1,SA2,SA3,SA4,
                 DA1,DA2,DA3,DA4,
                 0:8,
-                Protocol:8,
+                ?IPPROTO_TCP:8,
                 Len:16>>,
                 TCP,
                 Payload,
@@ -374,8 +373,7 @@ checksum(#ipv4{
 % UDP pseudoheader checksum
 checksum(#ipv4{
         saddr = {SA1,SA2,SA3,SA4},
-        daddr = {DA1,DA2,DA3,DA4},
-        p = Protocol
+        daddr = {DA1,DA2,DA3,DA4}
     },
     #udp{
         sport = SPort,
@@ -393,7 +391,7 @@ checksum(#ipv4{
                 <<SA1,SA2,SA3,SA4,
                 DA1,DA2,DA3,DA4,
                 0:8,
-                Protocol:8,
+                ?IPPROTO_UDP:8,
                 Len:16,
 
                 SPort:16,
