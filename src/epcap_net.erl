@@ -98,34 +98,59 @@ proto(?IPPROTO_TCP) -> tcp;
 proto(?IPPROTO_UDP) -> udp;
 proto(_) -> unsupported.
 
+
+%%
+%% Ethernet
+%%
 ether(<<Dhost:6/bytes, Shost:6/bytes, Type:16, Payload/binary>>) ->
 %    Len = byte_size(Packet) - 4,
 %    <<Payload:Len/bytes, CRC:4/bytes>> = Packet,
     {#ether{
        dhost = Dhost, shost = Shost,
        type = Type
-      }, Payload}.
+      }, Payload};
+ether(#ether{
+       dhost = Dhost, shost = Shost,
+       type = Type
+      }) ->
+    <<Dhost:6/bytes, Shost:6/bytes, Type:16>>.
 
+
+%%
+%% IPv4
+%%
 ipv4(
     <<4:4, HL:4, ToS:8, Len:16,
     Id:16, 0:1, DF:1, MF:1, %% RFC791 states it's a MUST
     Off:13, TTL:8, P:8, Sum:16,
     SA1:8, SA2:8, SA3:8, SA4:8,
     DA1:8, DA2:8, DA3:8, DA4:8,
-    Payload/binary>> = Raw
+    Payload/binary>>
 ) ->
-    <<Hdr:160/bitstring, _/binary>> = Raw,
-    Valid = makesum(Hdr) =:= 0,
-
     {#ipv4{
-        valid = Valid,
         hl = HL, tos = ToS, len = Len,
         id = Id, df = DF, mf = MF,
         off = Off, ttl = TTL, p = P, sum = Sum,
         saddr = {SA1,SA2,SA3,SA4},
         daddr = {DA1,DA2,DA3,DA4}
-    }, Payload}.
+    }, Payload};
+ipv4(#ipv4{
+        hl = HL, tos = ToS, len = Len,
+        id = Id, df = DF, mf = MF,
+        off = Off, ttl = TTL, p = P, sum = Sum,
+        saddr = {SA1,SA2,SA3,SA4},
+        daddr = {DA1,DA2,DA3,DA4}
+    }) ->
+    <<4:4, HL:4, ToS:8, Len:16,
+    Id:16, 0:1, DF:1, MF:1, %% RFC791 states it's a MUST
+    Off:13, TTL:8, P:8, Sum:16,
+    SA1:8, SA2:8, SA3:8, SA4:8,
+    DA1:8, DA2:8, DA3:8, DA4:8>>.
 
+
+%%
+%% IPv6
+%%
 ipv6(
     <<6:4, Class:8, Flow:20,
     Len:16, Next:8, Hop:8,
@@ -134,12 +159,24 @@ ipv6(
     Payload/binary>>
 ) ->
     {#ipv6{
-        valid = false,
         class = Class, flow = Flow,
         len = Len, next = Next, hop = Hop,
         saddr = Src, daddr = Dst
-    }, Payload}.
+    }, Payload};
+ipv6(#ipv6{
+        class = Class, flow = Flow,
+        len = Len, next = Next, hop = Hop,
+        saddr = Src, daddr = Dst
+    }) ->
+    <<6:4, Class:8, Flow:20,
+    Len:16, Next:8, Hop:8,
+    Src:128,
+    Dst:128>>.
 
+
+%%
+%% TCP
+%%
 tcp(
     <<SPort:16, DPort:16,
       SeqNo:32,
@@ -149,7 +186,7 @@ tcp(
       Sum:16, Urp:16,
       Payload/binary>>
 ) ->
-    {Opt, Msg} = tcp_options(tcp_offset(Off), Payload),
+    {Opt, Data} = tcp_options(tcp_offset(Off), Payload),
     {#tcp{
         sport = SPort, dport = DPort,
         seqno = SeqNo,
@@ -158,7 +195,21 @@ tcp(
             psh = PSH, rst = RST, syn = SYN, fin = FIN, win = Win,
         sum = Sum, urp = Urp,
         opt = Opt
-    }, Msg}.
+    }, Data};
+tcp(#tcp{
+        sport = SPort, dport = DPort,
+        seqno = SeqNo,
+        ackno = AckNo,
+        off = Off, cwr = CWR, ece = ECE, urg = URG, ack = ACK,
+            psh = PSH, rst = RST, syn = SYN, fin = FIN, win = Win,
+        sum = Sum, urp = Urp
+    }) ->
+    <<SPort:16, DPort:16,
+      SeqNo:32,
+      AckNo:32,
+      Off:4, 0:4, CWR:1, ECE:1, URG:1, ACK:1,
+          PSH:1, RST:1, SYN:1, FIN:1, Win:16,
+      Sum:16, Urp:16>>.
 
 tcp_offset(N) when N > 5 -> (N - 5) * 4;
 tcp_offset(_) -> 0.
@@ -169,47 +220,187 @@ tcp_options(Offset, Payload) when Offset > 0 ->
 tcp_options(_, Payload) ->
     {<<>>, Payload}.
 
-udp(<<SPort:16, DPort:16, ULen:16, Sum:16, Payload/binary>>) ->
-    {#udp{sport = SPort, dport = DPort, ulen = ULen, sum = Sum}, Payload}.
 
+%%
+%% UDP
+%%
+udp(<<SPort:16, DPort:16, ULen:16, Sum:16, Payload/binary>>) ->
+    {#udp{sport = SPort, dport = DPort, ulen = ULen, sum = Sum}, Payload};
+udp(#udp{sport = SPort, dport = DPort, ulen = ULen, sum = Sum}) ->
+    <<SPort:16, DPort:16, ULen:16, Sum:16>>.
+
+
+%%
+%% ICMP
+%%
+
+% Destination Unreachable Message
+icmp(<<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16, _Unused:32, Payload/binary>>) ->
+    {#icmp{
+        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum
+    }, Payload};
+icmp(#icmp{
+        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum
+    }) ->
+    <<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16>>;
+
+% Time Exceeded Message
+icmp(<<?ICMP_TIME_EXCEEDED:8, Code:8, Checksum:16, _Unused:32, Payload/binary>>) ->
+    {#icmp{
+        type = ?ICMP_TIME_EXCEEDED, code = Code, checksum = Checksum
+    }, Payload};
+icmp(#icmp{
+        type = ?ICMP_TIME_EXCEEDED, code = Code, checksum = Checksum
+    }) ->
+    <<?ICMP_TIME_EXCEEDED:8, Code:8, Checksum:16>>;
+
+% Parameter Problem Message
+icmp(<<?ICMP_PARAMETERPROB:8, Code:8, Checksum:16, Pointer:8, _Unused:24, Payload/binary>>) ->
+    {#icmp{
+        type = ?ICMP_PARAMETERPROB, code = Code, checksum = Checksum, pointer = Pointer
+    }, Payload};
+icmp(#icmp{
+        type = ?ICMP_PARAMETERPROB, code = Code, checksum = Checksum, pointer = Pointer
+    }) ->
+    <<?ICMP_PARAMETERPROB:8, Code:8, Checksum:16, Pointer:8>>;
+
+% Source Quench Message
+icmp(<<?ICMP_SOURCE_QUENCH:8, 0:8, Checksum:16, _Unused:32, Payload/binary>>) ->
+    {#icmp{
+        type = ?ICMP_SOURCE_QUENCH, code = 0, checksum = Checksum
+    }, Payload};
+icmp(#icmp{
+        type = ?ICMP_SOURCE_QUENCH, code = Code, checksum = Checksum
+    }) ->
+    <<?ICMP_SOURCE_QUENCH:8, Code:8, Checksum:16>>;
+
+% Redirect Message
+icmp(<<?ICMP_REDIRECT:8, Code:8, Checksum:16, DA1, DA2, DA3, DA4, Payload/binary>>) ->
+    {#icmp{
+        type = ?ICMP_REDIRECT, code = Code, checksum = Checksum, gateway = {DA1,DA2,DA3,DA4}
+    }, Payload};
+icmp(#icmp{
+        type = ?ICMP_REDIRECT, code = Code, checksum = Checksum, gateway = {DA1,DA2,DA3,DA4}
+    }) ->
+    <<?ICMP_REDIRECT:8, Code:8, Checksum:16, DA1, DA2, DA3, DA4>>;
+
+% Echo or Echo Reply Message
 icmp(<<?ICMP_ECHO:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
     {#icmp{
         type = ?ICMP_ECHO, code = Code, checksum = Checksum, id = Id,
         sequence = Sequence
     }, Payload};
+icmp(#icmp{
+        type = ?ICMP_ECHO, code = Code, checksum = Checksum, id = Id,
+        sequence = Sequence
+    }) ->
+    <<?ICMP_ECHO:8, Code:8, Checksum:16, Id:16, Sequence:16>>;
 
-% PLACEHOLDER: gateway
-icmp(<<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16, Gateway:32, Payload/binary>>) ->
+% Timestamp or Timestamp Reply Message
+icmp(<<Type:8, 0:8, Checksum:16, Id:16, Sequence:16, TS_Orig:32, TS_Recv:32, TS_Tx:32>>)
+when Type =:= ?ICMP_TIMESTAMP; Type =:= ?ICMP_TIMESTAMPREPLY ->
     {#icmp{
-        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum, gateway = Gateway
-    }, Payload};
+        type = Type, code = 0, checksum = Checksum, id = Id,
+        sequence = Sequence, ts_orig = TS_Orig, ts_recv = TS_Recv, ts_tx = TS_Tx
+    }, <<>>};
+icmp(#icmp{
+        type = Type, code = Code, checksum = Checksum, id = Id,
+        sequence = Sequence, ts_orig = TS_Orig, ts_recv = TS_Recv, ts_tx = TS_Tx
+    }) when Type =:= ?ICMP_TIMESTAMP; Type =:= ?ICMP_TIMESTAMPREPLY ->
+    <<Type:8, Code:8, Checksum:16, Id:16, Sequence:16, TS_Orig:32, TS_Recv:32, TS_Tx:32>>;
 
-% PLACEHOLDER: frag
-icmp(<<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16, _Unused:16, MTU:16, Payload/binary>>) ->
+% Information Request or Information Reply Message
+icmp(<<Type:8, 0:8, Checksum:16, Id:16, Sequence:16>>)
+when Type =:= ?ICMP_INFO_REQUEST; Type =:= ?ICMP_INFO_REPLY ->
     {#icmp{
-        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum, mtu = MTU
-    }, Payload};
+        type = Type, code = 0, checksum = Checksum, id = Id,
+        sequence = Sequence
+    }, <<>>};
+icmp(#icmp{
+        type = Type, code = Code, checksum = Checksum, id = Id,
+        sequence = Sequence
+    }) when Type =:= ?ICMP_INFO_REQUEST; Type =:= ?ICMP_INFO_REPLY ->
+    <<Type:8, Code:8, Checksum:16, Id:16, Sequence:16>>;
 
-% Catch unknown types
+% Catch/build arbitrary types
 icmp(<<Type:8, Code:8, Checksum:16, Un:32, Payload/binary>>) ->
     {#icmp{
         type = Type, code = Code, checksum = Checksum, un = Un
-    }, Payload}.
+    }, Payload};
+icmp(#icmp{type = Type, code = Code, checksum = Checksum, un = Un}) ->
+    <<Type:8, Code:8, Checksum:16, Un:32>>.
 
+
+%%
+%% Utility functions
+%%
 payload(Payload) ->
     [ to_ascii(C) || <<C:8>> <= Payload ].
 
 checksum(Hdr) ->
     lists:foldl(fun compl/2, 0, [ W || <<W:16>> <= Hdr ]).
 
-checksum(tcp, #ipv4{saddr = {S1,S2,S3,S4}, daddr = {D1,D2,D3,D4}, p = P},
-    <<Head:16/bytes, _:2/bytes, Trailer/binary>> = Payload) ->
-    Len = byte_size(Payload),
-    PseudoHdr = case Len rem 2 of
-        0 -> <<S1,S2,S3,S4,D1,D2,D3,D4,0:8,P,Len:16,Head/bytes,0:16,Trailer/bytes>>;
-        1 -> <<S1,S2,S3,S4,D1,D2,D3,D4,0:8,P,Len:16,Head/bytes,0:16,Trailer/bytes,0>>
+% TCP pseudoheader checksum
+checksum(#ipv4{
+        saddr = {SA1,SA2,SA3,SA4},
+        daddr = {DA1,DA2,DA3,DA4},
+        p = Protocol
+    },
+    #tcp{
+        off = Off
+    } = TCPhdr,
+    Payload
+) ->
+    Len = Off * 4,
+    TCP = tcp(TCPhdr#tcp{sum = 0}),
+    Pad = case Len rem 2 of
+        0 -> 0;
+        1 -> 8
     end,
-    checksum(PseudoHdr).
+    checksum(
+        list_to_binary([
+                <<SA1,SA2,SA3,SA4,
+                DA1,DA2,DA3,DA4,
+                0:8,
+                Protocol:8,
+                Len:16>>,
+                TCP,
+                Payload,
+                <<0:Pad>>
+            ]));
+
+% UDP pseudoheader checksum
+checksum(#ipv4{
+        saddr = {SA1,SA2,SA3,SA4},
+        daddr = {DA1,DA2,DA3,DA4},
+        p = Protocol
+    },
+    #udp{
+        sport = SPort,
+        dport = DPort,
+        ulen = Len
+    },
+    Payload
+) ->
+    Pad = case Len rem 2 of
+        0 -> 0;
+        1 -> 8
+    end,
+    checksum(
+        list_to_binary([
+                <<SA1,SA2,SA3,SA4,
+                DA1,DA2,DA3,DA4,
+                0:8,
+                Protocol:8,
+                Len:16,
+
+                SPort:16,
+                DPort:16,
+                Len:16,
+                0:16,
+                Payload/binary,
+                0:Pad>>
+            ])).
 
 makesum(Hdr) -> 16#FFFF - checksum(Hdr).
 
