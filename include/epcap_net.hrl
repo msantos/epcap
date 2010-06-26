@@ -22,13 +22,16 @@
 -define(ICMP_ADDRESSREPLY, 18).
 
 -record(ether, {
-        dhost, shost, type, crc
+        dhost = <<0,0,0,0,0,0>>,
+        shost = <<0,0,0,0,0,0>>,
+        type = ?ETH_P_IP,
+        crc = 0
     }).
 
 -record(ipv4, {
         valid = false,
         v = 4, hl = 5, tos = 0, len = 20,
-        id, df = 0, mf = 0,
+        id = 0, df = 0, mf = 0,
         off = 0, ttl = 0, p = ?IPPROTO_TCP, sum = 0,
         saddr = {127,0,0,1}, daddr = {127,0,0,1}
     }).
@@ -47,7 +50,7 @@
         ackno = 0,
         off = 0, cwr = 0, ece = 0, urg = 0, ack = 0,
             psh = 0, rst = 0, syn = 0, fin = 0, win = 0,
-        sum, urp = 0,
+        sum = 0, urp = 0,
         opt = <<>>
     }).
 
