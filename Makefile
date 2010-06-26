@@ -4,7 +4,7 @@ APP=epcap
 
 CC=gcc
 
-ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.6.4
+ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.7
 ARCH=-m32
 CFLAGS=-g -Wall
 CPPFLAGS=-I$(ERL_LIB)/include
