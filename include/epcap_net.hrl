@@ -8,7 +8,6 @@
 -define(IPPROTO_UDP, 17).
 
 -define(ICMP_ECHOREPLY, 0).
-
 -define(ICMP_DEST_UNREACH, 3).
 -define(    ICMP_UNREACH_NET, 0).           % bad net
 -define(    ICMP_UNREACH_HOST, 1).          % bad host
@@ -69,7 +68,7 @@
     }).
 
 -record(icmp, {
-        type, code, checksum = 0,
+        type = ?ICMP_ECHO, code = 0, checksum = 0,
         id = 0, sequence = 0,
         gateway = {127,0,0,1},
         un = <<>>,

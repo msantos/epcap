@@ -285,16 +285,18 @@ icmp(#icmp{
     <<?ICMP_REDIRECT:8, Code:8, Checksum:16, DA1, DA2, DA3, DA4>>;
 
 % Echo or Echo Reply Message
-icmp(<<?ICMP_ECHO:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>) ->
+icmp(<<Type:8, Code:8, Checksum:16, Id:16, Sequence:16, Payload/binary>>)
+when Type =:= ?ICMP_ECHO; Type =:= ?ICMP_ECHO_REPLY ->
     {#icmp{
-        type = ?ICMP_ECHO, code = Code, checksum = Checksum, id = Id,
+        type = Type, code = Code, checksum = Checksum, id = Id,
         sequence = Sequence
     }, Payload};
 icmp(#icmp{
-        type = ?ICMP_ECHO, code = Code, checksum = Checksum, id = Id,
+        type = Type, code = Code, checksum = Checksum, id = Id,
         sequence = Sequence
-    }) ->
-    <<?ICMP_ECHO:8, Code:8, Checksum:16, Id:16, Sequence:16>>;
+    })
+when Type =:= ?ICMP_ECHO; Type =:= ?ICMP_ECHO_REPLY ->
+    <<Type:8, Code:8, Checksum:16, Id:16, Sequence:16>>;
 
 % Timestamp or Timestamp Reply Message
 icmp(<<Type:8, 0:8, Checksum:16, Id:16, Sequence:16, TS_Orig:32, TS_Recv:32, TS_Tx:32>>)
@@ -423,6 +425,5 @@ tcp_flags(#tcp{cwr = CWR, ece = ECE, urg = URG, ack = ACK,
         psh = PSH, rst = RST, syn = SYN, fin = FIN}) ->
     [ atom_to_list(F) || {F,V} <-
             [{cwr,CWR}, {ece,ECE}, {urg,URG}, {ack,ACK}, {psh,PSH}, {rst,RST}, {syn,SYN}, {fin,FIN}], V =:= 1 ].
-
 
 
