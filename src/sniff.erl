@@ -29,52 +29,59 @@
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(sniff).
--behaviour(gen_server).
+-behaviour(gen_fsm).
 
 -include("epcap_net.hrl").
 
--define(SERVER, ?MODULE).
+% Interface
+-export([start/0, start/1, stop/0]).
+-export([start_link/0]).
+% States
+-export([waiting/2, sniffing/2]).
+% Behaviours
+-export([init/1, handle_event/3, handle_sync_event/4,
+        handle_info/3, terminate/3, code_change/4]).
 
--export([start_link/0,start/0,start/1,stop/0]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-        terminate/2, code_change/3]).
 
-
+%%--------------------------------------------------------------------
+%%% Interface
+%%--------------------------------------------------------------------
 start() ->
     start([{filter, "tcp and port 80"},
             {interface, "en1"},
             {chroot, "priv/tmp"}]).
 start(Arg) when is_list(Arg) ->
-    gen_server:call(?SERVER, {start, Arg}).
+    gen_fsm:send_event(?MODULE, {start, Arg}).
 
 stop() ->
-    gen_server:call(?SERVER, stop).
+    gen_fsm:send_event(?MODULE, stop).
 
+
+%%--------------------------------------------------------------------
+%%% Callbacks
+%%--------------------------------------------------------------------
 start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+    gen_fsm:start({local, ?MODULE}, ?MODULE, [], []).
 
-
-%%
-%% gen_server callbacks
-%%
 init([]) ->
-    {ok, waiting}.
+    process_flag(trap_exit, true),
+    {ok, waiting, []}.
 
-handle_call({start, Arg}, _From, waiting) ->
-    epcap:start(Arg),
-    {reply, ok, sniffing};
-handle_call({start, Arg}, _From, sniffing) ->
-    epcap:stop(),
-    epcap:start(Arg),
-    {reply, ok, sniffing};
-handle_call(stop, _From, sniffing) ->
-    epcap:stop(),
-    {reply, ok, waiting}.
 
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+handle_event(_Event, StateName, State) ->
+    {next_state, StateName, State}.
 
-handle_info([{pkthdr, {{time, Time},{caplen, CapLen},{len, Len}}}, {packet, Packet}], State) ->
+handle_sync_event(_Event, _From, StateName, State) ->
+    {next_state, StateName, State}.
+
+
+%%
+%% State: sniffing
+%%
+handle_info([
+        {pkthdr, {{time, Time}, {caplen, CapLen}, {len, Len}}},
+        {packet, Packet}
+    ], sniffing, _) ->
     [Ether, IP, Hdr, Payload] = epcap_net:decapsulate(Packet),
     error_logger:info_report([
             {time, timestamp(Time)},
@@ -98,21 +105,47 @@ handle_info([{pkthdr, {{time, Time},{caplen, CapLen},{len, Len}}}, {packet, Pack
             {payload, epcap_net:payload(Payload)}
 
         ]),
-    {noreply, State};
-% WTF?
-handle_info(Info, State) ->
-    error_logger:error_report([wtf, Info]),
-    {noreply, State}.
+    {next_state, sniffing, []};
 
-terminate(_Reason, _State) ->
+% epcap port stopped
+handle_info({'EXIT', _Pid, normal}, sniffing, _) ->
+    {next_state, sniffing, []};
+
+%%
+%% State: waiting
+%%
+
+% epcap port stopped
+handle_info({'EXIT', _Pid, normal}, waiting, _) ->
+    {next_state, waiting, []}.
+
+
+terminate(_Reason, _StateName, _State) ->
     ok.
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+
+code_change(_OldVsn, StateName, State, _Extra) ->
+    {ok, StateName, State}.
 
 
-%%
-%% Internal functions
-%%
+%%--------------------------------------------------------------------
+%%% States
+%%--------------------------------------------------------------------
+waiting({start, Arg}, _) ->
+    epcap:start(Arg),
+    {next_state, sniffing, []}.
+
+sniffing({start, Arg}, _) ->
+    epcap:stop(),
+    epcap:start(Arg),
+    {next_state, sniffing, Arg};
+sniffing(stop, _) ->
+    epcap:stop(),
+    {next_state, waiting, []}.
+
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
 timestamp(Now) when is_tuple(Now) ->
     iso_8601_fmt(calendar:now_to_local_time(Now)).
 
