@@ -41,7 +41,6 @@
 
 -export([
         checksum/1,
-        checksum/3,
         decapsulate/1,
         makesum/1,
         valid/1,
@@ -339,11 +338,9 @@ icmp(#icmp{type = Type, code = Code, checksum = Checksum, un = Un}) ->
 payload(Payload) ->
     [ to_ascii(C) || <<C:8>> <= Payload ].
 
-checksum(Hdr) ->
-    lists:foldl(fun compl/2, 0, [ W || <<W:16>> <= Hdr ]).
 
 % TCP pseudoheader checksum
-checksum(#ipv4{
+checksum([#ipv4{
         saddr = {SA1,SA2,SA3,SA4},
         daddr = {DA1,DA2,DA3,DA4}
     },
@@ -351,7 +348,7 @@ checksum(#ipv4{
         off = Off
     } = TCPhdr,
     Payload
-) ->
+]) ->
     Len = Off * 4,
     TCP = tcp(TCPhdr#tcp{sum = 0}),
     Pad = case Len rem 2 of
@@ -371,7 +368,7 @@ checksum(#ipv4{
             ]));
 
 % UDP pseudoheader checksum
-checksum(#ipv4{
+checksum([#ipv4{
         saddr = {SA1,SA2,SA3,SA4},
         daddr = {DA1,DA2,DA3,DA4}
     },
@@ -381,7 +378,7 @@ checksum(#ipv4{
         ulen = Len
     },
     Payload
-) ->
+]) ->
     Pad = case Len rem 2 of
         0 -> 0;
         1 -> 8
@@ -400,7 +397,12 @@ checksum(#ipv4{
                 0:16,
                 Payload/binary,
                 0:Pad>>
-            ])).
+            ]));
+
+checksum(#ipv4{} = H) ->
+    checksum(ipv4(H));
+checksum(Hdr) ->
+    lists:foldl(fun compl/2, 0, [ W || <<W:16>> <= Hdr ]).
 
 makesum(Hdr) -> 16#FFFF - checksum(Hdr).
 
