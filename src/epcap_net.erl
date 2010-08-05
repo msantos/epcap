@@ -82,6 +82,9 @@ decapsulate({tcp, Data}, Packet) when byte_size(Data) >= ?TCPHDRLEN ->
 decapsulate({udp, Data}, Packet) when byte_size(Data) >= ?UDPHDRLEN ->
     {Hdr, Payload} = udp(Data),
     decapsulate(stop, [Payload, Hdr|Packet]);
+decapsulate({sctp, Data}, Packet) when byte_size(Data) >= 12 ->
+    {Hdr, Payload} = sctp(Data),
+    decapsulate(stop, [Payload, Hdr|Packet]);
 decapsulate({icmp, Data}, Packet) when byte_size(Data) >= ?ICMPHDRLEN ->
     {Hdr, Payload} = icmp(Data),
     decapsulate(stop, [Payload, Hdr|Packet]);
@@ -95,6 +98,7 @@ ether_type(_) -> unsupported.
 proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;
 proto(?IPPROTO_UDP) -> udp;
+proto(?IPPROTO_SCTP) -> sctp;
 proto(_) -> unsupported.
 
 
@@ -218,6 +222,42 @@ tcp_options(Offset, Payload) when Offset > 0 ->
     {Opt, Msg};
 tcp_options(_, Payload) ->
     {<<>>, Payload}.
+
+%%
+%% SCTP
+%%
+sctp(<<SPort:16, DPort:16, VTag:32, Sum:32, Payload/binary>>) ->
+	{#sctp{sport = SPort, dport = DPort, vtag = VTag, sum = Sum,
+	 chunks=sctp_chunk_list_gen(Payload)}, []}.
+
+sctp_chunk_list_gen(Payload) ->
+	sctp_chunk_list_gen(Payload, []).
+
+sctp_chunk_list_gen(Payload, List) ->
+	% chop the first chunk off the payload
+	case sctp_chunk_chop(Payload) of
+		{Chunk, Remainder} ->
+			% loop
+			sctp_chunk_list_gen(Remainder, [Chunk|List]);
+		[] ->
+			List
+	end.
+
+sctp_chunk_chop(<<>>) ->
+	[];
+sctp_chunk_chop(<<Ctype:8, Cflags:8, Clen:16, Remainder/binary>>) ->
+	Payload = binary:part(Remainder, 0, Clen-4),
+	Tail = binary:part(Remainder, Clen-4, byte_size(Remainder)-(Clen-4)),
+	{sctp_chunk(Ctype, Cflags, Clen, Payload), Tail}.
+
+sctp_chunk(Ctype, Cflags, Clen, Payload) ->
+	#sctp_chunk{type=Ctype, flags=Cflags, len = Clen-4,
+		    payload=sctp_chunk_payload(Ctype, Payload)}.
+
+sctp_chunk_payload(0, <<Tsn:32, Sid:16, Ssn:16, Ppi:32, Data/binary>>) ->
+	#sctp_chunk_data{tsn=Tsn, sid=Sid, ssn=Ssn, ppi=Ppi, data=Data};
+sctp_chunk_payload(_, Data) ->
+	Data.
 
 
 %%

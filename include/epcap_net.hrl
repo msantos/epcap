@@ -7,6 +7,7 @@
 -define(IPPROTO_ICMP, 1).
 -define(IPPROTO_TCP, 6).
 -define(IPPROTO_UDP, 17).
+-define(IPPROTO_SCTP, 132).
 
 -define(ICMP_ECHOREPLY, 0).
 -define(ICMP_DEST_UNREACH, 3).
@@ -78,4 +79,13 @@
         ts_orig = 0, ts_recv = 0, ts_tx = 0
     }).
 
-
+-record(sctp, {
+	sport = 0, dport = 0, vtag = 0, sum = 0,
+	chunks = []
+	}).
+-record(sctp_chunk, {
+	type = 0, flags = 0, len = 0, payload = 0
+	}).
+-record(sctp_chunk_data, {
+	tsn = 0, sid = 0, ssn = 0, ppi = 0, data
+	}).
