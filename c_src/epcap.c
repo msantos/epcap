@@ -61,6 +61,7 @@ main(int argc, char *argv[])
                 break;
             case 'f':
                 IS_NULL(ep->file = strdup(optarg));
+                ep->nosetuid = 1;
                 break;
             case 'g':
                 IS_NULL(ep->group = strdup(optarg));
@@ -95,7 +96,7 @@ main(int argc, char *argv[])
     IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
 
     IS_LTZERO(epcap_open(ep));
-    if (!ep->file && epcap_priv_drop(ep) != 0)
+    if (epcap_priv_drop(ep) != 0)
         exit (1);
 
     switch (pid = fork()) {

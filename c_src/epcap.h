@@ -86,6 +86,7 @@ typedef struct {
     pcap_t *p;          /* pcap handle */
     int promisc;        /* promiscuous mode */
     int verbose;        /* debugging messages */
+    int nosetuid;       /* options disallow running setuid */
     size_t snaplen;     /* packet capture length */
     u_int32_t timeout;  /* capture timeout */
     char *filt;         /* packet filter */

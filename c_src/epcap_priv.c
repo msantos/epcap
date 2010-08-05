@@ -48,6 +48,10 @@ epcap_priv_drop(EPCAP_STATE *ep)
     struct passwd *pw = NULL;
     struct group *gr = NULL;
 
+
+    if (ep->nosetuid)
+        return (getuid() != geteuid());
+
     if (geteuid() != 0) {
         warnx("uid != 0. Not dropping privs");
         return (1);
