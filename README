@@ -62,5 +62,6 @@ SCREENSHOT
 CONTRIBUTORS
 
 Olivier Girondel: IPv6 support
+Harald Welte: support reading packets from pcap file
 
 
