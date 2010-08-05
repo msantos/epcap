@@ -54,10 +54,13 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "d:g:hi:Ps:t:u:v")) != -1) {
+    while ( (ch = getopt(argc, argv, "d:f:g:hi:Ps:t:u:v")) != -1) {
         switch (ch) {
             case 'd':   /* chroot directory */
                 IS_NULL(ep->chroot = strdup(optarg));
+                break;
+            case 'f':
+                IS_NULL(ep->file = strdup(optarg));
                 break;
             case 'g':
                 IS_NULL(ep->group = strdup(optarg));
@@ -92,7 +95,7 @@ main(int argc, char *argv[])
     IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
 
     IS_LTZERO(epcap_open(ep));
-    if (epcap_priv_drop(ep) != 0)
+    if (!ep->file && epcap_priv_drop(ep) != 0)
         exit (1);
 
     switch (pid = fork()) {
@@ -137,11 +140,14 @@ epcap_open(EPCAP_STATE *ep)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
 
+    if (ep->file) {
+        PCAP_ERRBUF(ep->p = pcap_open_offline(ep->file, errbuf));
+    } else {
+        if (ep->dev == NULL)
+            PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
 
-    if (ep->dev == NULL)
-        PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
-
-    PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen, ep->promisc, ep->timeout, errbuf));
+        PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen, ep->promisc, ep->timeout, errbuf));
+    }
 
     return (0);
 }
@@ -261,6 +267,7 @@ usage(EPCAP_STATE *ep)
             "usage: %s <options>\n"
             "              -d <directory>   chroot directory\n"
             "              -i <interface>   interface to snoop\n"
+            "              -f <filename>    read from file instead of live capture\n"
             "              -P               promiscuous mode\n"
             "              -g <group>       unprivileged group\n"
             "              -u <user>        unprivileged user\n"

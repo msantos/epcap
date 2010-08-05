@@ -41,7 +41,7 @@
 
 #include <pcap.h>
 
-#define EPCAP_VERSION   "0.01"
+#define EPCAP_VERSION   "0.02"
 
 #define MAXBUFLEN       4096    /* Largest message accepted on stdin */
 #define PKTLENHDR       2       /* 2 byte packet length header */
@@ -93,6 +93,7 @@ typedef struct {
     char *user;         /* run as unprivileged user */
     char *group;        /* run as unprivilted group */
     char *chroot;       /* chroot directory */
+    char *file;         /* filename in case we read from pcap file */
 } EPCAP_STATE;
 
 

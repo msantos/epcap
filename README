@@ -34,7 +34,7 @@ epcap:start(Args) -> pid()
 
     Types   Args = [Options]
             Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
-                        {user, string()} | {filter, string()} | {progname, string()}
+                        {user, string()} | {filter, string()} | {progname, string()} | {file, string()}
 
 
 SCREENSHOT

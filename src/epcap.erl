@@ -69,11 +69,18 @@ loop(Caller, Port) ->
     end.
 
 make_args(PL) ->
-    proplists:get_value(progname, PL, "sudo " ++ progname()) ++ " " ++
+    case proplists:is_defined(file, PL) of
+        true ->
+            Sudo = "";
+        false ->
+            Sudo = "sudo "
+    end,
+    proplists:get_value(progname, PL, Sudo ++ progname()) ++ " " ++
     string:join([ get_switch(proplists:lookup(Arg, PL)) || Arg <- [
             chroot,
             group,
             interface,
+            file,
             promiscuous,
             user,
             snaplen,
@@ -84,6 +91,7 @@ make_args(PL) ->
     " ").
 
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
+get_switch({file, Arg})         -> "-f " ++ Arg;
 get_switch({group, Arg})        -> "-g " ++ Arg;
 get_switch({interface, Arg})    -> "-i " ++ Arg;
 get_switch({promiscuous, true}) -> "-P";
