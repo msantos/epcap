@@ -69,11 +69,9 @@ loop(Caller, Port) ->
     end.
 
 make_args(PL) ->
-    case proplists:is_defined(file, PL) of
-        true ->
-            Sudo = "";
-        false ->
-            Sudo = "sudo "
+    Sudo = case proplists:is_defined(file, PL) of
+        true -> "";
+        false -> "sudo "
     end,
     proplists:get_value(progname, PL, Sudo ++ progname()) ++ " " ++
     string:join([ get_switch(proplists:lookup(Arg, PL)) || Arg <- [
