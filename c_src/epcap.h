@@ -86,7 +86,7 @@ typedef struct {
     pcap_t *p;          /* pcap handle */
     int promisc;        /* promiscuous mode */
     int verbose;        /* debugging messages */
-    int nosetuid;       /* options disallow running setuid */
+    int runasuser;      /* if setuid, run as the calling user */
     size_t snaplen;     /* packet capture length */
     u_int32_t timeout;  /* capture timeout */
     char *filt;         /* packet filter */
@@ -99,4 +99,5 @@ typedef struct {
 
 
 int epcap_priv_drop(EPCAP_STATE *ep);
+void epcap_priv_issetuid(EPCAP_STATE *ep);
 

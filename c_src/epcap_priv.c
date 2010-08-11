@@ -49,13 +49,8 @@ epcap_priv_drop(EPCAP_STATE *ep)
     struct group *gr = NULL;
 
 
-    if (ep->nosetuid)
-        return (getuid() != geteuid());
-
-    if (geteuid() != 0) {
-        warnx("uid != 0. Not dropping privs");
+    if (geteuid() != 0)
         return (1);
-    }
 
     SETVAR(ep->user, EPCAP_USER);
     SETVAR(ep->group, EPCAP_GROUP);
@@ -81,6 +76,16 @@ epcap_priv_drop(EPCAP_STATE *ep)
     IS_LTZERO(setuid(pw->pw_uid));
 
     return (0);
+}
+
+
+    void
+epcap_priv_issetuid(EPCAP_STATE *ep)
+{
+    if (ep->runasuser && (geteuid() == 0)) {
+        IS_LTZERO(setgid(getgid()));
+        IS_LTZERO(setuid(getuid()));
+    }
 }
 
 
