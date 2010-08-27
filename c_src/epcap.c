@@ -195,10 +195,8 @@ epcap_loop(pcap_t *p)
 
     for ( ; ; ) {
         pkt = pcap_next(p, &hdr);
-        if (pkt == NULL)
-            continue;
-
-        epcap_response(pkt, &hdr);
+        if (pkt)
+            epcap_response(pkt, &hdr);
     }
 }
 
