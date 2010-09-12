@@ -41,7 +41,7 @@
 
 #include <pcap.h>
 
-#define EPCAP_VERSION   "0.02"
+#define EPCAP_VERSION   "0.03"
 
 #define MAXBUFLEN       4096    /* Largest message accepted on stdin */
 #define PKTLENHDR       2       /* 2 byte packet length header */
