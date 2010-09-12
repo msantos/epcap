@@ -1,5 +1,5 @@
 
-REBAR=./rebar
+REBAR=$(shell which rebar || echo ./rebar)
 
 all: compile
 
