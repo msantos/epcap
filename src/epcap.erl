@@ -1,4 +1,4 @@
-%% Copyright (c) 2009, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2009-2010, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -29,45 +29,87 @@
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(epcap).
+-behaviour(gen_server).
+
+-define(SERVER, ?MODULE).
 
 -export([start/0, start/1, start/2, stop/0]).
+-export([start_link/2]).
 -export([progname/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+            terminate/2, code_change/3]).
+
+-record(state, {
+    pid,
+    port
+}).
 
 
 start() ->
-    start(self(), []).
-start(PL) ->
-    start(self(), PL).
-start(Pid, PL) when is_list(PL) ->
-    Port = make_args(PL),
-    spawn_link(fun() -> init(Pid, Port) end).
+    start_link(self(), []).
+start(Options) ->
+    start_link(self(), Options).
+start(Pid, Options) when is_pid(Pid), is_list(Options) ->
+    start_link(Pid, Options).
+
 stop() ->
-    ?MODULE ! stop.
+    gen_server:call(?SERVER, [stop]).
 
-init(Pid, ExtPrg) ->
-    register(?MODULE, self()),
-    process_flag(trap_exit, true),
-    Port = open_port({spawn, ExtPrg}, [{packet, 2}, binary, exit_status]),
-    loop(Pid, Port).
 
-loop(Caller, Port) ->
-    receive
-        {Port, {data, Data}} ->
-            Caller !  binary_to_term(Data),
-            loop(Caller, Port);
-        {Port, {exit_status, Status}} when Status > 128 ->
-            io:format("Port terminated with signal: ~p~n", [Status - 128]),
-            exit({port_terminated, Status});
-        {Port, {exit_status, Status}} ->
-            io:format("Port terminated with status: ~p~n", [Status]),
-            exit({port_terminated, Status});
-        {'EXIT', Port, Reason} ->
-            exit(Reason);
-        stop ->
-            erlang:port_close(Port),
-            exit(normal)
-    end.
+start_link(Pid, Options) ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [Pid, Options], []).
 
+init([Pid, Options]) ->
+    Cmd = make_args(Options),
+    Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
+    {ok, #state{
+            pid = Pid,
+            port = Port
+        }}.
+
+
+handle_call(stop, _From, State) ->
+    {stop, shutdown, ok, State};
+handle_call(_Request, _From, State) ->
+    {reply, ok, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+terminate(_Reason, #state{port = Port}) ->
+    try erlang:port_close(Port) of
+        true -> ok
+    catch
+        _:_ -> ok
+    end,
+    ok.
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+
+%%--------------------------------------------------------------------
+%%% Port communication
+%%--------------------------------------------------------------------
+handle_info({Port, {data, Data}}, #state{port = Port, pid = Pid} = State) ->
+    Pid ! binary_to_term(Data),
+    {noreply, State};
+
+handle_info({Port, {exit_status, Status}}, #state{port = Port} = State) when Status > 128 ->
+    {stop, {port_terminated, Status-128}, State};
+handle_info({Port, {exit_status, Status}}, #state{port = Port} = State) ->
+    {stop, {port_terminated, Status}, #state{port = Port} = State};
+handle_info({'EXIT', Port, Reason}, #state{port = Port} = State) ->
+    {stop, {shutdown, Reason}, State};
+
+% WTF
+handle_info(Info, State) ->
+    error_logger:error_report([{wtf, Info}]),
+    {noreply, State}.
+
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
 make_args(PL) ->
     Sudo = case proplists:is_defined(file, PL) of
         true -> "";
