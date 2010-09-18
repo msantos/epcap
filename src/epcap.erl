@@ -53,7 +53,7 @@ start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     start_link(Pid, Options).
 
 stop() ->
-    gen_server:call(?SERVER, [stop]).
+    gen_server:call(?SERVER, stop).
 
 
 start_link(Pid, Options) ->
@@ -69,9 +69,7 @@ init([Pid, Options]) ->
 
 
 handle_call(stop, _From, State) ->
-    {stop, shutdown, ok, State};
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+    {stop, normal, ok, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -81,8 +79,7 @@ terminate(_Reason, #state{port = Port}) ->
         true -> ok
     catch
         _:_ -> ok
-    end,
-    ok.
+    end.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
