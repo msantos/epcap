@@ -48,7 +48,7 @@
 
 #define SNAPLEN         65535
 #define PROMISC         1       /* true */
-#define TIMEOUT         500     /* ms */
+#define TIMEOUT         0       /* ms, 0 = block indefinitely */
 
 #define EPCAP_FILTER    "tcp and port 80"
 
