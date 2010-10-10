@@ -59,6 +59,11 @@ SCREENSHOT
     payload: "HTTP/1.1 301 Moved Permanently..Server: nginx/0.7.61..Date: Thu, 07 Jan 2010 01:35:17 GMT..Content-Type: text/html; charset=utf-8..Connection: close..Status: 301 Moved Permanently..Location: http://github.com/dashboard..X-Runtime: 2ms..Content-Length: 93..Set-Cookie: _github_ses=BAh7BiIKZmxhc2hJQzonQWN0aW9uQ29udHJvbGxlcjo6Rmxhc2g6OkZsYXNoSGFzaHsABjoKQHVzZWR7AA%3D%3D--884981fc5aa85daf318eeff084d98e2cff92578f; path=/; expires=Wed, 01 Jan 2020 08:00:00 GMT; HttpOnly..Cache-Control: no-cache"
 
 
+TODO
+
+* return error atoms/tuples instead of using errx
+
+
 CONTRIBUTORS
 
 Olivier Girondel: IPv6 support
