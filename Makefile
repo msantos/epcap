@@ -1,7 +1,7 @@
 
 REBAR=$(shell which rebar || echo ./rebar)
 
-all: $(REBAR) compile
+all: compile
 
 ./rebar:
 	erl -noshell -s inets start \
@@ -9,9 +9,9 @@ all: $(REBAR) compile
 		-s init stop
 	chmod +x ./rebar
 
-compile:
+compile: $(REBAR)
 	@$(REBAR) compile
 
-clean:  
+clean: $(REBAR)
 	@$(REBAR) clean
 
