@@ -1,4 +1,4 @@
-/* Copyright (c) 2009, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2010, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
 
 int epcap_open(EPCAP_STATE *ep);
 int epcap_init(EPCAP_STATE *ep);
-void epcap_loop(pcap_t *p);
-void epcap_response(const u_char *pkt, struct pcap_pkthdr *hdr);
+void epcap_loop(EPCAP_STATE *ep);
+void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt);
 void epcap_watch();
 void usage(EPCAP_STATE *ep);
 
@@ -106,7 +106,7 @@ main(int argc, char *argv[])
         case 0:
             (void)close(fileno(stdin));
             IS_LTZERO(epcap_init(ep));
-            epcap_loop(ep->p);
+            epcap_loop(ep);
             break;
         default:
             (void)close(fileno(stdout));
@@ -178,7 +178,7 @@ epcap_init(EPCAP_STATE *ep)
     }
 
     if (pcap_setfilter(ep->p, &fcode) != 0) {
-        VERBOSE(EXIT_FAILURE, "pcap_setfilter: %s", pcap_geterr(ep->p));
+        VERBOSE(1, "pcap_setfilter: %s", pcap_geterr(ep->p));
         return (-1);
     }
 
@@ -188,21 +188,36 @@ epcap_init(EPCAP_STATE *ep)
 
 
     void
-epcap_loop(pcap_t *p)
+epcap_loop(EPCAP_STATE *ep)
 {
-    struct pcap_pkthdr hdr;
+    pcap_t *p = ep->p;
+    struct pcap_pkthdr *hdr = NULL;
     const u_char *pkt = NULL;
 
-    for ( ; ; ) {
-        pkt = pcap_next(p, &hdr);
-        if (pkt)
-            epcap_response(pkt, &hdr);
+    int read_packet = 1;
+
+    while (read_packet) {
+        switch (pcap_next_ex(p, &hdr, &pkt)) {
+            case 0:     /* timeout */
+                VERBOSE(1, "timeout reading packet");
+                break;
+            case 1:     /* got packet */
+                epcap_response(hdr, pkt);
+                break;
+
+            case -1:    /* error reading packet */
+                VERBOSE(1, "error reading packet");
+                /* fall through */
+            case -2:    /* eof */
+            default:
+                read_packet = 0;
+        }
     }
 }
 
 
     void
-epcap_response(const u_char *pkt, struct pcap_pkthdr *hdr)
+epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt)
 {
     ei_x_buff msg;
     u_int16_t len = 0;
