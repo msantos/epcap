@@ -47,6 +47,7 @@
         ether/1,
         ether_addr/1,
         ether_type/1,
+        arp/1,
         icmp/1,
         ipv4/1,
         ipv6/1,
@@ -70,6 +71,9 @@ decapsulate({unsupported, Data}, Packet) ->
 decapsulate({ether, Data}, Packet) when byte_size(Data) >= ?ETHERHDRLEN ->
     {Hdr, Payload} = ether(Data),
     decapsulate({ether_type(Hdr#ether.type), Payload}, [Hdr|Packet]);
+decapsulate({arp, Data}, Packet) when byte_size(Data) >= 28 -> % IPv4 ARP
+    {Hdr, Payload} = arp(Data),
+    decapsulate(stop, [Payload, Hdr|Packet]);
 decapsulate({ipv4, Data}, Packet) when byte_size(Data) >= ?IPV4HDRLEN ->
     {Hdr, Payload} = ipv4(Data),
     decapsulate({proto(Hdr#ipv4.p), Payload}, [Hdr|Packet]);
@@ -93,6 +97,7 @@ decapsulate({_, Data}, Packet) ->
 
 ether_type(?ETH_P_IP) -> ipv4;
 ether_type(?ETH_P_IPV6) -> ipv6;
+ether_type(?ETH_P_ARP) -> arp;
 ether_type(_) -> unsupported.
 
 proto(?IPPROTO_ICMP) -> icmp;
@@ -117,6 +122,40 @@ ether(#ether{
        type = Type
       }) ->
     <<Dhost:6/bytes, Shost:6/bytes, Type:16>>.
+
+%%
+%% ARP
+%%
+arp(<<Hrd:16, Pro:16,
+    Hln:8, Pln:8, Op:16,
+    Sha:6/bytes,
+    SA1:8, SA2:8, SA3:8, SA4:8,
+    Tha:6/bytes,
+    DA1:8, DA2:8, DA3:8, DA4:8,
+    Payload/binary>>
+) ->
+    {#arp{
+        hrd = Hrd, pro = Pro,
+        hln = Hln, pln = Pln, op = Op,
+        sha = Sha,
+        sip = {SA1,SA2,SA3,SA4},
+        tha = Tha,
+        tip = {DA1,DA2,DA3,DA4}
+    }, Payload};
+arp(#arp{
+        hrd = Hrd, pro = Pro,
+        hln = Hln, pln = Pln, op = Op,
+        sha = Sha,
+        sip = {SA1,SA2,SA3,SA4},
+        tha = Tha,
+        tip = {DA1,DA2,DA3,DA4}
+    }) ->
+    <<Hrd:16, Pro:16,
+    Hln:8, Pln:8, Op:16,
+    Sha:6/bytes,
+    SA1:8, SA2:8, SA3:8, SA4:8,
+    Tha:6/bytes,
+    DA1:8, DA2:8, DA3:8, DA4:8>>.
 
 
 %%
