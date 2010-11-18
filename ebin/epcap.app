@@ -12,6 +12,5 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, {epcap_app, []}},
   {env, []}
  ]}.
