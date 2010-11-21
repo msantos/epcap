@@ -435,16 +435,15 @@ checksum([#ipv4{
         1 -> 8
     end,
     checksum(
-        list_to_binary([
-                <<SA1,SA2,SA3,SA4,
-                DA1,DA2,DA3,DA4,
-                0:8,
-                ?IPPROTO_TCP:8,
-                Len:16>>,
-                TCP,
-                Payload,
-                <<0:Pad>>
-            ]));
+        <<SA1,SA2,SA3,SA4,
+          DA1,DA2,DA3,DA4,
+          0:8,
+          ?IPPROTO_TCP:8,
+          Len:16,
+          TCP/binary,
+          Payload/bits,
+          0:Pad>>
+    );
 
 % UDP pseudoheader checksum
 checksum([#ipv4{
@@ -452,31 +451,25 @@ checksum([#ipv4{
         daddr = {DA1,DA2,DA3,DA4}
     },
     #udp{
-        sport = SPort,
-        dport = DPort,
         ulen = Len
-    },
+    } = Hdr,
     Payload
 ]) ->
+    UDP = udp(Hdr#udp{sum = 0}),
     Pad = case Len rem 2 of
         0 -> 0;
         1 -> 8
     end,
     checksum(
-        list_to_binary([
-                <<SA1,SA2,SA3,SA4,
-                DA1,DA2,DA3,DA4,
-                0:8,
-                ?IPPROTO_UDP:8,
-                Len:16,
-
-                SPort:16,
-                DPort:16,
-                Len:16,
-                0:16,
-                Payload/binary,
-                0:Pad>>
-            ]));
+        <<SA1,SA2,SA3,SA4,
+          DA1,DA2,DA3,DA4,
+          0:8,
+          ?IPPROTO_UDP:8,
+          Len:16,
+          UDP/binary,
+          Payload/bits,
+          0:Pad>>
+    );
 
 checksum(#ipv4{} = H) ->
     checksum(ipv4(H));
