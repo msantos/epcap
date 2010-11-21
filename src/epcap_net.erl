@@ -167,14 +167,16 @@ ipv4(
     Off:13, TTL:8, P:8, Sum:16,
     SA1:8, SA2:8, SA3:8, SA4:8,
     DA1:8, DA2:8, DA3:8, DA4:8,
-    Payload/binary>>
+    Rest/binary>>
 ) ->
+    {Opt, Payload} = options(HL, Rest),
     {#ipv4{
         hl = HL, tos = ToS, len = Len,
         id = Id, df = DF, mf = MF,
         off = Off, ttl = TTL, p = P, sum = Sum,
         saddr = {SA1,SA2,SA3,SA4},
-        daddr = {DA1,DA2,DA3,DA4}
+        daddr = {DA1,DA2,DA3,DA4},
+        opt = Opt
     }, Payload};
 ipv4(#ipv4{
         hl = HL, tos = ToS, len = Len,
@@ -226,9 +228,9 @@ tcp(
       Off:4, 0:4, CWR:1, ECE:1, URG:1, ACK:1,
           PSH:1, RST:1, SYN:1, FIN:1, Win:16,
       Sum:16, Urp:16,
-      Payload/binary>>
+      Rest/binary>>
 ) ->
-    {Opt, Data} = tcp_options(tcp_offset(Off), Payload),
+    {Opt, Payload} = options(Off, Rest),
     {#tcp{
         sport = SPort, dport = DPort,
         seqno = SeqNo,
@@ -237,7 +239,7 @@ tcp(
             psh = PSH, rst = RST, syn = SYN, fin = FIN, win = Win,
         sum = Sum, urp = Urp,
         opt = Opt
-    }, Data};
+    }, Payload};
 tcp(#tcp{
         sport = SPort, dport = DPort,
         seqno = SeqNo,
@@ -253,13 +255,11 @@ tcp(#tcp{
           PSH:1, RST:1, SYN:1, FIN:1, Win:16,
       Sum:16, Urp:16>>.
 
-tcp_offset(N) when N > 5 -> (N - 5) * 4;
-tcp_offset(_) -> 0.
-
-tcp_options(Offset, Payload) when Offset > 0 ->
-    <<Opt:Offset/bytes, Msg/binary>> = Payload,
-    {Opt, Msg};
-tcp_options(_, Payload) ->
+options(Offset, Payload) when Offset > 5 ->
+    N = (Offset-5)*4,
+    <<Opt:N/binary, Payload1/binary>> = Payload,
+    {Opt, Payload1};
+options(_, Payload) ->
     {<<>>, Payload}.
 
 %%
