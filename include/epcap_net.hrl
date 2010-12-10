@@ -100,7 +100,7 @@
         type = ?ICMP_ECHO, code = 0, checksum = 0,
         id = 0, sequence = 0,
         gateway = {127,0,0,1},
-        un = <<>>,
+        un = <<0:32>>,
         mtu = 0,
         pointer = 0,
         ts_orig = 0, ts_recv = 0, ts_tx = 0

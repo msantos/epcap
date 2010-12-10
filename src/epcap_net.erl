@@ -313,44 +313,46 @@ udp(#udp{sport = SPort, dport = DPort, ulen = ULen, sum = Sum}) ->
 %%
 
 % Destination Unreachable Message
-icmp(<<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16, _Unused:32, Payload/binary>>) ->
+icmp(<<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16, Unused:32/bits, Payload/binary>>) ->
     {#icmp{
-        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum
+        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum, un = Unused
     }, Payload};
 icmp(#icmp{
-        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum
+        type = ?ICMP_DEST_UNREACH, code = Code, checksum = Checksum, un = Unused
     }) ->
-    <<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16>>;
+    <<?ICMP_DEST_UNREACH:8, Code:8, Checksum:16, Unused:32/bits>>;
 
 % Time Exceeded Message
-icmp(<<?ICMP_TIME_EXCEEDED:8, Code:8, Checksum:16, _Unused:32, Payload/binary>>) ->
+icmp(<<?ICMP_TIME_EXCEEDED:8, Code:8, Checksum:16, Unused:32/bits, Payload/binary>>) ->
     {#icmp{
-        type = ?ICMP_TIME_EXCEEDED, code = Code, checksum = Checksum
+        type = ?ICMP_TIME_EXCEEDED, code = Code, checksum = Checksum, un = Unused
     }, Payload};
 icmp(#icmp{
-        type = ?ICMP_TIME_EXCEEDED, code = Code, checksum = Checksum
+        type = ?ICMP_TIME_EXCEEDED, code = Code, checksum = Checksum, un = Unused
     }) ->
-    <<?ICMP_TIME_EXCEEDED:8, Code:8, Checksum:16>>;
+    <<?ICMP_TIME_EXCEEDED:8, Code:8, Checksum:16, Unused:32/bits>>;
 
 % Parameter Problem Message
-icmp(<<?ICMP_PARAMETERPROB:8, Code:8, Checksum:16, Pointer:8, _Unused:24, Payload/binary>>) ->
+icmp(<<?ICMP_PARAMETERPROB:8, Code:8, Checksum:16, Pointer:8, Unused:24/bits, Payload/binary>>) ->
     {#icmp{
-        type = ?ICMP_PARAMETERPROB, code = Code, checksum = Checksum, pointer = Pointer
+        type = ?ICMP_PARAMETERPROB, code = Code, checksum = Checksum, pointer = Pointer,
+        un = Unused
     }, Payload};
 icmp(#icmp{
-        type = ?ICMP_PARAMETERPROB, code = Code, checksum = Checksum, pointer = Pointer
+        type = ?ICMP_PARAMETERPROB, code = Code, checksum = Checksum, pointer = Pointer,
+        un = Unused
     }) ->
-    <<?ICMP_PARAMETERPROB:8, Code:8, Checksum:16, Pointer:8>>;
+    <<?ICMP_PARAMETERPROB:8, Code:8, Checksum:16, Pointer:8, Unused:24/bits>>;
 
 % Source Quench Message
-icmp(<<?ICMP_SOURCE_QUENCH:8, 0:8, Checksum:16, _Unused:32, Payload/binary>>) ->
+icmp(<<?ICMP_SOURCE_QUENCH:8, 0:8, Checksum:16, Unused:32/bits, Payload/binary>>) ->
     {#icmp{
-        type = ?ICMP_SOURCE_QUENCH, code = 0, checksum = Checksum
+        type = ?ICMP_SOURCE_QUENCH, code = 0, checksum = Checksum, un = Unused
     }, Payload};
 icmp(#icmp{
-        type = ?ICMP_SOURCE_QUENCH, code = Code, checksum = Checksum
+        type = ?ICMP_SOURCE_QUENCH, code = Code, checksum = Checksum, un = Unused
     }) ->
-    <<?ICMP_SOURCE_QUENCH:8, Code:8, Checksum:16>>;
+    <<?ICMP_SOURCE_QUENCH:8, Code:8, Checksum:16, Unused:32/bits>>;
 
 % Redirect Message
 icmp(<<?ICMP_REDIRECT:8, Code:8, Checksum:16, DA1, DA2, DA3, DA4, Payload/binary>>) ->
