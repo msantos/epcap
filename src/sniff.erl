@@ -31,7 +31,7 @@
 -module(sniff).
 -behaviour(gen_fsm).
 
--include("epcap_net.hrl").
+-include("pkt.hrl").
 
 % Interface
 -export([start/0, start/1, stop/0]).
@@ -41,6 +41,8 @@
 % Behaviours
 -export([init/1, handle_event/3, handle_sync_event/4,
         handle_info/3, terminate/3, code_change/4]).
+
+-define(is_print(C), C >= $ , C =< $~).
 
 
 %%--------------------------------------------------------------------
@@ -82,27 +84,27 @@ handle_info([
         {pkthdr, {{time, Time}, {caplen, CapLen}, {len, Len}}},
         {packet, Packet}
     ], sniffing, _) ->
-    [Ether, IP, Hdr, Payload] = epcap_net:decapsulate(Packet),
+    [Ether, IP, Hdr, Payload] = pkt:decapsulate(Packet),
     error_logger:info_report([
             {time, timestamp(Time)},
             {caplen,CapLen},
             {len,Len},
 
             % Source
-            {source_macaddr, string:join(epcap_net:ether_addr(Ether#ether.shost), ":")},
+            {source_macaddr, string:join(ether_addr(Ether#ether.shost), ":")},
             {source_address, IP#ipv4.saddr},
             {source_port, port(sport, Hdr)},
 
             % Destination
-            {destination_macaddr, string:join(epcap_net:ether_addr(Ether#ether.dhost), ":")},
+            {destination_macaddr, string:join(ether_addr(Ether#ether.dhost), ":")},
             {destination_address, IP#ipv4.daddr},
             {destination_port, port(dport, Hdr)},
 
-            {protocol, epcap_net:proto(IP#ipv4.p)},
+            {protocol, pkt:proto(IP#ipv4.p)},
             {protocol_header, header(Hdr)},
 
             {payload_bytes, byte_size(Payload)},
-            {payload, epcap_net:payload(Payload)}
+            {payload, payload(Payload)}
 
         ]),
     {next_state, sniffing, []};
@@ -155,7 +157,7 @@ iso_8601_fmt(DateTime) ->
             [Year, Month, Day, Hour, Min, Sec])).
 
 header(#tcp{ackno = Ackno, seqno = Seqno, win = Win} = Hdr) ->
-    [{flags, epcap_net:tcp_flags(Hdr)},
+    [{flags, tcp_flags(Hdr)},
         {seq, Seqno},
         {ack, Ackno},
         {win, Win}];
@@ -173,4 +175,19 @@ port(dport, #tcp{dport = DPort}) -> DPort;
 port(dport, #udp{dport = DPort}) -> DPort;
 port(_,_) -> "".
 
+payload(Payload) ->
+    [ to_ascii(C) || <<C:8>> <= Payload ].
+
+to_ascii(C) when ?is_print(C) -> C;
+to_ascii(_) -> $..
+
+ether_addr(B) when is_binary(B) ->
+    ether_addr(binary_to_list(B));
+    ether_addr(L) when is_list(L) ->
+        [ hd(io_lib:format("~.16B", [N])) || N <- L ].
+
+tcp_flags(#tcp{cwr = CWR, ece = ECE, urg = URG, ack = ACK,
+    psh = PSH, rst = RST, syn = SYN, fin = FIN}) ->
+    [ atom_to_list(F) || {F,V} <-
+        [{cwr,CWR}, {ece,ECE}, {urg,URG}, {ack,ACK}, {psh,PSH}, {rst,RST}, {syn,SYN}, {fin,FIN}], V =:= 1 ].
 
