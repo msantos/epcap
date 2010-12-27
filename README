@@ -13,7 +13,7 @@ make
 sudo visudo
 youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
 
-erl -pa ebin
+erl -pa ebin deps/*/ebin
 % Start the gen_server
 sniff:start_link().
 
