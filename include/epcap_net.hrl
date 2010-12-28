@@ -1,3 +1,6 @@
+%%% Code has moved to:
+%%% https://github.com/msantos/pkt
+
 %% From http://en.wikipedia.org/wiki/EtherType
 -define(ETH_P_IP, 16#0800).
 -define(ETH_P_ARP, 16#0806).
