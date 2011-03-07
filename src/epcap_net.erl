@@ -46,6 +46,7 @@
 -export([
         checksum/1,
         decapsulate/1,
+        decapsulate_dlt/2,
         makesum/1,
         valid/1,
         ether/1,
@@ -68,10 +69,16 @@
 decapsulate(Data) ->
     decapsulate({ether, Data}, []).
 
+decapsulate_dlt(Dlt, Data) ->
+    decapsulate({dlt_atom(Dlt), Data}, []).
+
 decapsulate(stop, Packet) ->
     lists:reverse(Packet);
 decapsulate({unsupported, Data}, Packet) ->
     decapsulate(stop, [{unsupported, Data}|Packet]);
+decapsulate({linux_cooked, Data}, Packet) when byte_size(Data) >= 16 ->
+    {Hdr, Payload} = linux_cooked(Data),
+    decapsulate({ether_type(Hdr#linux_cooked.pro), Payload}, [Hdr|Packet]);
 decapsulate({ether, Data}, Packet) when byte_size(Data) >= ?ETHERHDRLEN ->
     {Hdr, Payload} = ether(Data),
     decapsulate({ether_type(Hdr#ether.type), Payload}, [Hdr|Packet]);
@@ -104,12 +111,33 @@ ether_type(?ETH_P_IPV6) -> ipv6;
 ether_type(?ETH_P_ARP) -> arp;
 ether_type(_) -> unsupported.
 
+dlt_atom(?DLT_EN10MB) -> ether;
+dlt_atom(?DLT_LINUX_SLL) -> linux_cooked.
+
+
 proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;
 proto(?IPPROTO_UDP) -> udp;
 proto(?IPPROTO_SCTP) -> sctp;
 proto(_) -> unsupported.
 
+%%
+%% Linux cooked capture ("-i any") - DLT_LINUX_SLL
+%%
+linux_cooked(<<Ptype:16/big, Hrd:16/big, Ll_len:16/big,
+               Ll_hdr:8/bytes, Pro:16, Payload/binary>>) ->
+    {#linux_cooked{
+        packet_type = Ptype, hrd = Hrd,
+        ll_len = Ll_len, ll_bytes = Ll_hdr,
+        pro = Pro
+      }, Payload};
+linux_cooked(#linux_cooked{
+              packet_type = Ptype, hrd = Hrd,
+              ll_len = Ll_len, ll_bytes = Ll_hdr,
+              pro = Pro
+             }) ->
+    <<Ptype:16/big, Hrd:16/big, Ll_len:16/big,
+      Ll_hdr:8/bytes, Pro:16>>.
 
 %%
 %% Ethernet

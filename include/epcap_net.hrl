@@ -18,6 +18,9 @@
 -define(ARPOP_InREPLY, 9).                  % InARP reply
 -define(ARPOP_NAK, 10).                     % (ATM)ARP NAK
 
+-define(DLT_EN10MB, 1).                     % Ethernet
+-define(DLT_LINUX_SLL, 113).                % Linux cooked sockets fake hdr
+
 -define(IPPROTO_IP, 0).
 -define(IPPROTO_ICMP, 1).
 -define(IPPROTO_TCP, 6).
@@ -49,6 +52,14 @@
 -define(ICMP_INFO_REPLY, 16).
 -define(ICMP_ADDRESS, 17).
 -define(ICMP_ADDRESSREPLY, 18).
+
+-record(linux_cooked, {
+	packet_type,
+	hrd = ?ARPHRD_ETHER,
+	ll_len = 0,
+	ll_bytes = <<>>,
+	pro = ?ETH_P_IP
+    }).
 
 -record(ether, {
         dhost = <<0,0,0,0,0,0>>,
