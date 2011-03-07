@@ -36,7 +36,7 @@
 int epcap_open(EPCAP_STATE *ep);
 int epcap_init(EPCAP_STATE *ep);
 void epcap_loop(EPCAP_STATE *ep);
-void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt);
+void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink);
 void epcap_watch();
 void usage(EPCAP_STATE *ep);
 
@@ -195,6 +195,7 @@ epcap_loop(EPCAP_STATE *ep)
     const u_char *pkt = NULL;
 
     int read_packet = 1;
+    int datalink = pcap_datalink(p);
 
     while (read_packet) {
         switch (pcap_next_ex(p, &hdr, &pkt)) {
@@ -202,7 +203,7 @@ epcap_loop(EPCAP_STATE *ep)
                 VERBOSE(1, "timeout reading packet");
                 break;
             case 1:     /* got packet */
-                epcap_response(hdr, pkt);
+                epcap_response(hdr, pkt, datalink);
                 break;
 
             case -1:    /* error reading packet */
@@ -217,7 +218,7 @@ epcap_loop(EPCAP_STATE *ep)
 
 
     void
-epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt)
+epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink)
 {
     ei_x_buff msg;
     u_int16_t len = 0;
@@ -232,7 +233,7 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt)
     IS_FALSE(ei_x_encode_atom(&msg, "pkthdr"));
 
     /* { */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 3));
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 4));
 
     /* {time, {MegaSec, Sec, MicroSec}} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
@@ -252,6 +253,11 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt)
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
     IS_FALSE(ei_x_encode_atom(&msg, "len"));
     IS_FALSE(ei_x_encode_long(&msg, hdr->len));
+
+    /* {datalink, DataLinkType} */
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
+    IS_FALSE(ei_x_encode_atom(&msg, "datalink"));
+    IS_FALSE(ei_x_encode_long(&msg, datalink));
 
     /* } */
 
