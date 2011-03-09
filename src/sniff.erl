@@ -84,7 +84,9 @@ handle_info([
         {pkthdr, [{time, Time}, {caplen, CapLen}, {len, Len}, {datalink, DLT}]},
         {packet, Packet}
     ], sniffing, _) ->
-    [Ether, IP, Hdr, Payload] = pkt:decapsulate(Packet),
+
+    [Ether, IP, Hdr, Payload] = decode(pkt:link_type(DLT), Packet),
+
     {Saddr, Daddr, Proto} = case IP of
         IP when is_record(IP, ipv4) ->
             S = IP#ipv4.saddr,
@@ -210,4 +212,11 @@ tcp_flags(#tcp{cwr = CWR, ece = ECE, urg = URG, ack = ACK,
             {syn, SYN},
             {fin, FIN}
         ], V =:= 1 ].
+
+decode(ether, Packet) ->
+    pkt:decapsulate({ether, Packet});
+decode(null, Packet) ->
+    % Add a fake ethernet header
+    [_Null, IP, Hdr, Payload] = pkt:decapsulate({null, Packet}),
+    [#ether{}, IP, Hdr, Payload].
 
