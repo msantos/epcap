@@ -215,8 +215,7 @@ tcp_flags(#tcp{cwr = CWR, ece = ECE, urg = URG, ack = ACK,
 
 decode(ether, Packet) ->
     pkt:decapsulate({ether, Packet});
-decode(null, Packet) ->
+decode(DLT, Packet) ->
     % Add a fake ethernet header
-    [_Null, IP, Hdr, Payload] = pkt:decapsulate({null, Packet}),
+    [_Linktype, IP, Hdr, Payload] = pkt:decapsulate({DLT, Packet}),
     [#ether{}, IP, Hdr, Payload].
-
