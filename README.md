@@ -62,16 +62,6 @@ epcap includes a small example program called sniff.
 
 * return error atoms/tuples instead of using errx
 
-* DLTs
-    * DLT_NULL
-    * DLT_SLIP
-    * DLT_PPP
-    * DLT_RAW
-    * DLT\_PPP\_SERIAL
-    * DLT\_PPP\_ETHER
-    * DLT\_IEEE802\_11
-    * DLT_LOOP
-
 
 ## CONTRIBUTORS
 
