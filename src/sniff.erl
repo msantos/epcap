@@ -85,6 +85,18 @@ handle_info([
         {packet, Packet}
     ], sniffing, _) ->
     [Ether, IP, Hdr, Payload] = pkt:decapsulate(Packet),
+    {Saddr, Daddr, Proto} = case IP of
+        IP when is_record(IP, ipv4) ->
+            S = IP#ipv4.saddr,
+            D = IP#ipv4.daddr,
+            P = IP#ipv4.p,
+            {S,D,P};
+        IP when is_record(IP, ipv6) ->
+            S = IP#ipv6.saddr,
+            D = IP#ipv6.daddr,
+            P = IP#ipv6.next,
+            {S,D,P}
+    end,
     error_logger:info_report([
             {time, timestamp(Time)},
             {caplen, CapLen},
@@ -93,20 +105,19 @@ handle_info([
 
             % Source
             {source_macaddr, string:join(ether_addr(Ether#ether.shost), ":")},
-            {source_address, IP#ipv4.saddr},
+            {source_address, Saddr},
             {source_port, port(sport, Hdr)},
 
             % Destination
             {destination_macaddr, string:join(ether_addr(Ether#ether.dhost), ":")},
-            {destination_address, IP#ipv4.daddr},
+            {destination_address, Daddr},
             {destination_port, port(dport, Hdr)},
 
-            {protocol, pkt:proto(IP#ipv4.p)},
+            {protocol, pkt:proto(Proto)},
             {protocol_header, header(Hdr)},
 
             {payload_bytes, byte_size(Payload)},
             {payload, payload(Payload)}
-
         ]),
     {next_state, sniffing, []};
 
