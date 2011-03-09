@@ -228,12 +228,12 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     IS_FALSE(ei_x_new_with_version(&msg));
     IS_FALSE(ei_x_encode_list_header(&msg, 2));
 
-    /* {pkthdr, {{time, Time}, {caplen, CapLength}, {len, ActualLength}}} */
+    /* {pkthdr, [{time, Time}, {caplen, CapLength}, {len, ActualLength}]} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
     IS_FALSE(ei_x_encode_atom(&msg, "pkthdr"));
 
-    /* { */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 4));
+    /* [ */
+    IS_FALSE(ei_x_encode_list_header(&msg, 4));
 
     /* {time, {MegaSec, Sec, MicroSec}} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
@@ -258,6 +258,9 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
     IS_FALSE(ei_x_encode_atom(&msg, "datalink"));
     IS_FALSE(ei_x_encode_long(&msg, datalink));
+
+    /* ] */
+    IS_FALSE(ei_x_encode_empty_list(&msg));
 
     /* } */
 

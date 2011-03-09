@@ -81,14 +81,15 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %% State: sniffing
 %%
 handle_info([
-        {pkthdr, {{time, Time}, {caplen, CapLen}, {len, Len}}},
+        {pkthdr, [{time, Time}, {caplen, CapLen}, {len, Len}, {datalink, DLT}]},
         {packet, Packet}
     ], sniffing, _) ->
     [Ether, IP, Hdr, Payload] = pkt:decapsulate(Packet),
     error_logger:info_report([
             {time, timestamp(Time)},
-            {caplen,CapLen},
-            {len,Len},
+            {caplen, CapLen},
+            {len, Len},
+            {datalink, DLT},
 
             % Source
             {source_macaddr, string:join(ether_addr(Ether#ether.shost), ":")},
