@@ -89,7 +89,7 @@ handle_info([
             {time, timestamp(Time)},
             {caplen, CapLen},
             {len, Len},
-            {datalink, DLT},
+            {datalink, pkt:link_type(DLT)},
 
             % Source
             {source_macaddr, string:join(ether_addr(Ether#ether.shost), ":")},

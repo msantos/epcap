@@ -52,6 +52,7 @@
         ether/1,
         ether_addr/1,
         ether_type/1,
+        link_type/1,
         arp/1,
         icmp/1,
         ipv4/1,
@@ -70,7 +71,7 @@ decapsulate(Data) ->
     decapsulate({ether, Data}, []).
 
 decapsulate_dlt(Dlt, Data) ->
-    decapsulate({dlt_atom(Dlt), Data}, []).
+    decapsulate({link_type(Dlt), Data}, []).
 
 decapsulate(stop, Packet) ->
     lists:reverse(Packet);
@@ -111,8 +112,8 @@ ether_type(?ETH_P_IPV6) -> ipv6;
 ether_type(?ETH_P_ARP) -> arp;
 ether_type(_) -> unsupported.
 
-dlt_atom(?DLT_EN10MB) -> ether;
-dlt_atom(?DLT_LINUX_SLL) -> linux_cooked.
+link_type(?DLT_EN10MB) -> ether;
+link_type(?DLT_LINUX_SLL) -> linux_cooked.
 
 
 proto(?IPPROTO_ICMP) -> icmp;
