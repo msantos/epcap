@@ -9,6 +9,9 @@ all: compile
 		-s inets stop -s init stop
 	chmod +x ./rebar
 
+dirs:
+	@mkdir -p priv/tmp
+
 compile: $(REBAR)
 	@$(REBAR) compile
 

@@ -60,7 +60,8 @@ start_link(Pid, Options) ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [Pid, Options], []).
 
 init([Pid, Options]) ->
-    Cmd = make_args(Options),
+    Chroot = chroot_path(),
+    Cmd = make_args(Options ++ [{chroot, Chroot}]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{
             pid = Pid,
@@ -146,4 +147,10 @@ progname() ->
             ?MODULE
         ]).
 
-
+chroot_path() ->
+    filename:join([
+            filename:dirname(code:which(?MODULE)),
+            "..",
+            "priv",
+            "tmp"
+        ]).
