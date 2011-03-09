@@ -18,8 +18,12 @@
 -define(ARPOP_InREPLY, 9).                  % InARP reply
 -define(ARPOP_NAK, 10).                     % (ATM)ARP NAK
 
+-define(DLT_NULL, 0).                       % BSD loopback
 -define(DLT_EN10MB, 1).                     % Ethernet
 -define(DLT_LINUX_SLL, 113).                % Linux cooked sockets fake hdr
+
+-define(PF_INET, 2).
+-define(PF_INET6, 10).
 
 -define(IPPROTO_IP, 0).
 -define(IPPROTO_ICMP, 1).
@@ -61,6 +65,10 @@
 	pro = ?ETH_P_IP
     }).
 
+-record(null, {
+        family = ?PF_INET
+    }).
+
 -record(ether, {
         dhost = <<0,0,0,0,0,0>>,
         shost = <<0,0,0,0,0,0>>,
@@ -92,7 +100,7 @@
 
 -record(ipv6, {
         v = 6, class = 0, flow = 0,
-        len = 40, next = 0, hop = 0,
+        len = 40, next = ?IPPROTO_TCP, hop = 0,
         saddr, daddr
     }).
 

@@ -50,33 +50,40 @@
         makesum/1,
         valid/1,
         ether/1,
-        ether_addr/1,
         ether_type/1,
         link_type/1,
         arp/1,
+        null/1,
+        linux_cooked/1,
         icmp/1,
         ipv4/1,
         ipv6/1,
-        payload/1,
         proto/1,
         tcp/1,
-        tcp_flags/1,
         udp/1
 ]).
 
--define(is_print(C), C >= $ , C =< $~).
-
-
-decapsulate(Data) ->
-    decapsulate({ether, Data}, []).
 
 decapsulate_dlt(Dlt, Data) ->
     decapsulate({link_type(Dlt), Data}, []).
 
+
+decapsulate({DLT, Data}) when is_integer(DLT) ->
+    decapsulate({link_type(DLT), Data}, []);
+decapsulate({DLT, Data}) when is_atom(DLT) ->
+    decapsulate({DLT, Data}, []);
+decapsulate(Data) when is_binary(Data) ->
+    decapsulate({ether, Data}, []).
+
 decapsulate(stop, Packet) ->
     lists:reverse(Packet);
+
 decapsulate({unsupported, Data}, Packet) ->
     decapsulate(stop, [{unsupported, Data}|Packet]);
+
+decapsulate({null, Data}, Packet) when byte_size(Data) >= 16 ->
+    {Hdr, Payload} = null(Data),
+    decapsulate({family(Hdr#null.family), Payload}, [Hdr|Packet]);
 decapsulate({linux_cooked, Data}, Packet) when byte_size(Data) >= 16 ->
     {Hdr, Payload} = linux_cooked(Data),
     decapsulate({ether_type(Hdr#linux_cooked.pro), Payload}, [Hdr|Packet]);
@@ -86,12 +93,14 @@ decapsulate({ether, Data}, Packet) when byte_size(Data) >= ?ETHERHDRLEN ->
 decapsulate({arp, Data}, Packet) when byte_size(Data) >= 28 -> % IPv4 ARP
     {Hdr, Payload} = arp(Data),
     decapsulate(stop, [Payload, Hdr|Packet]);
+
 decapsulate({ipv4, Data}, Packet) when byte_size(Data) >= ?IPV4HDRLEN ->
     {Hdr, Payload} = ipv4(Data),
     decapsulate({proto(Hdr#ipv4.p), Payload}, [Hdr|Packet]);
 decapsulate({ipv6, Data}, Packet) when byte_size(Data) >= ?IPV6HDRLEN ->
     {Hdr, Payload} = ipv6(Data),
     decapsulate({proto(Hdr#ipv6.next), Payload}, [Hdr|Packet]);
+
 decapsulate({tcp, Data}, Packet) when byte_size(Data) >= ?TCPHDRLEN ->
     {Hdr, Payload} = tcp(Data),
     decapsulate(stop, [Payload, Hdr|Packet]);
@@ -107,20 +116,37 @@ decapsulate({icmp, Data}, Packet) when byte_size(Data) >= ?ICMPHDRLEN ->
 decapsulate({_, Data}, Packet) ->
     decapsulate(stop, [{truncated, Data}|Packet]).
 
+
 ether_type(?ETH_P_IP) -> ipv4;
 ether_type(?ETH_P_IPV6) -> ipv6;
 ether_type(?ETH_P_ARP) -> arp;
 ether_type(_) -> unsupported.
 
+link_type(?DLT_NULL) -> null;
 link_type(?DLT_EN10MB) -> ether;
-link_type(?DLT_LINUX_SLL) -> linux_cooked.
+link_type(?DLT_LINUX_SLL) -> linux_cooked;
+link_type(_) -> unsupported.
 
+family(?PF_INET) -> ipv4;
+family(?PF_INET6) -> ipv6;
+family(_) -> unsupported.
 
 proto(?IPPROTO_ICMP) -> icmp;
 proto(?IPPROTO_TCP) -> tcp;
 proto(?IPPROTO_UDP) -> udp;
 proto(?IPPROTO_SCTP) -> sctp;
 proto(_) -> unsupported.
+
+
+%%
+%% BSD loopback
+%%
+null(<<Family:4/native-unsigned-integer-unit:8, Payload/binary>>) ->
+    {#null{
+            family = Family
+        }, Payload};
+null(#null{family = Family}) ->
+    <<Family:4/native-unsigned-integer-unit:8>>.
 
 %%
 %% Linux cooked capture ("-i any") - DLT_LINUX_SLL
@@ -201,7 +227,7 @@ ipv4(
     SA1:8, SA2:8, SA3:8, SA4:8,
     DA1:8, DA2:8, DA3:8, DA4:8,
     Rest/binary>>
-) ->
+) when HL >= 5 ->
     {Opt, Payload} = options(HL, Rest),
     {#ipv4{
         hl = HL, tos = ToS, len = Len,
@@ -262,7 +288,7 @@ tcp(
           PSH:1, RST:1, SYN:1, FIN:1, Win:16,
       Sum:16, Urp:16,
       Rest/binary>>
-) ->
+) when Off >= 5 ->
     {Opt, Payload} = options(Off, Rest),
     {#tcp{
         sport = SPort, dport = DPort,
@@ -288,12 +314,10 @@ tcp(#tcp{
           PSH:1, RST:1, SYN:1, FIN:1, Win:16,
       Sum:16, Urp:16>>.
 
-options(Offset, Payload) when Offset > 5 ->
+options(Offset, Payload) ->
     N = (Offset-5)*4,
     <<Opt:N/binary, Payload1/binary>> = Payload,
-    {Opt, Payload1};
-options(_, Payload) ->
-    {<<>>, Payload}.
+    {Opt, Payload1}.
 
 %%
 %% SCTP
@@ -449,9 +473,6 @@ icmp(#icmp{type = Type, code = Code, checksum = Checksum, un = Un}) ->
 %%
 %% Utility functions
 %%
-payload(Payload) ->
-    [ to_ascii(C) || <<C:8>> <= Payload ].
-
 
 % TCP pseudoheader checksum
 checksum([#ipv4{
@@ -519,18 +540,4 @@ compl(N,S) -> compl(N+S).
 
 valid(16#FFFF) -> true;
 valid(_) -> false.
-
-to_ascii(C) when ?is_print(C) -> C;
-to_ascii(_) -> $..
-
-ether_addr(B) when is_binary(B) ->
-    ether_addr(binary_to_list(B));
-ether_addr(L) when is_list(L) ->
-    [ hd(io_lib:format("~.16B", [N])) || N <- L ].
-
-tcp_flags(#tcp{cwr = CWR, ece = ECE, urg = URG, ack = ACK,
-        psh = PSH, rst = RST, syn = SYN, fin = FIN}) ->
-    [ atom_to_list(F) || {F,V} <-
-            [{cwr,CWR}, {ece,ECE}, {urg,URG}, {ack,ACK}, {psh,PSH}, {rst,RST}, {syn,SYN}, {fin,FIN}], V =:= 1 ].
-
 
