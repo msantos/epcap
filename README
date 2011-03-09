@@ -18,10 +18,10 @@ erl -pa ebin deps/*/ebin
 sniff:start_link().
 
 % Use your interface, or leave it out and trust in pcap
-sniff:start([{interface, "eth0"},{chroot,"priv/tmp"}]).
+sniff:start([{interface, "eth0"}]).
 
 % To change the filter
-sniff:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"},{chroot,"priv/tmp"}]).
+sniff:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"}]).
 
 % To stop sniffing
 sniff:stop().
@@ -63,10 +63,27 @@ TODO
 
 * return error atoms/tuples instead of using errx
 
+* DLTs
+    * DLT_NULL
+    * DLT_SLIP
+    * DLT_PPP
+    * DLT_RAW
+    * DLT_PPP_SERIAL
+    * DLT_PPP_ETHER
+    * DLT_IEEE802_11
+    * DLT_LOOP
+
 
 CONTRIBUTORS
 
-Olivier Girondel: IPv6 support
-Harald Welte: support reading packets from pcap file; SCTP support
-Gregory Haskins: fix application file
+Olivier Girondel:
+* preliminary IPv6 support
+
+Harald Welte:
+* support reading packets from pcap file
+* SCTP support
+* datalink types
+
+Gregory Haskins:
+* application file fix
 

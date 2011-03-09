@@ -1,7 +1,7 @@
 {application, epcap,
  [
   {description, "libpcap port"},
-  {vsn, "0.03"},
+  {vsn, "0.04"},
   {modules, [
       epcap,
       epcap_net,
