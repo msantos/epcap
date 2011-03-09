@@ -184,11 +184,19 @@ to_ascii(_) -> $..
 
 ether_addr(B) when is_binary(B) ->
     ether_addr(binary_to_list(B));
-    ether_addr(L) when is_list(L) ->
-        [ hd(io_lib:format("~.16B", [N])) || N <- L ].
+ether_addr(L) when is_list(L) ->
+    [ hd(io_lib:format("~.16B", [N])) || N <- L ].
 
 tcp_flags(#tcp{cwr = CWR, ece = ECE, urg = URG, ack = ACK,
     psh = PSH, rst = RST, syn = SYN, fin = FIN}) ->
-    [ atom_to_list(F) || {F,V} <-
-        [{cwr,CWR}, {ece,ECE}, {urg,URG}, {ack,ACK}, {psh,PSH}, {rst,RST}, {syn,SYN}, {fin,FIN}], V =:= 1 ].
+    [ F || {F,V} <- [
+            {cwr, CWR},
+            {ece, ECE},
+            {urg, URG},
+            {ack, ACK},
+            {psh, PSH},
+            {rst, RST},
+            {syn, SYN},
+            {fin, FIN}
+        ], V =:= 1 ].
 
