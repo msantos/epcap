@@ -36,7 +36,9 @@
 int epcap_open(EPCAP_STATE *ep);
 int epcap_init(EPCAP_STATE *ep);
 void epcap_loop(EPCAP_STATE *ep);
+void epcap_ctrl(const char *ctrl_evt);
 void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink);
+void epcap_send_free(ei_x_buff *msg);
 void epcap_watch();
 void usage(EPCAP_STATE *ep);
 
@@ -201,27 +203,41 @@ epcap_loop(EPCAP_STATE *ep)
         switch (pcap_next_ex(p, &hdr, &pkt)) {
             case 0:     /* timeout */
                 VERBOSE(1, "timeout reading packet");
+                epcap_ctrl("timeout");
                 break;
             case 1:     /* got packet */
                 epcap_response(hdr, pkt, datalink);
                 break;
-
+            case -2:    /* eof */
+                VERBOSE(1, "end of file");
+                epcap_ctrl("eof");
+                read_packet = 0;
+                break;
             case -1:    /* error reading packet */
                 VERBOSE(1, "error reading packet");
                 /* fall through */
-            case -2:    /* eof */
             default:
                 read_packet = 0;
         }
     }
 }
 
+void epcap_ctrl(const char *ctrl_evt)
+{
+    ei_x_buff msg;
+
+    IS_FALSE(ei_x_new_with_version(&msg));
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
+    IS_FALSE(ei_x_encode_atom(&msg, "epcap"));
+    IS_FALSE(ei_x_encode_atom(&msg, ctrl_evt));
+
+    epcap_send_free(&msg);
+}
 
     void
 epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink)
 {
     ei_x_buff msg;
-    u_int16_t len = 0;
 
 
     /* [ */
@@ -272,16 +288,22 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     /* ] */
     IS_FALSE(ei_x_encode_empty_list(&msg));
 
-    len = htons(msg.index);
+    epcap_send_free(&msg);
+}
+
+void epcap_send_free(ei_x_buff *msg)
+{
+    u_int16_t len = 0;
+
+    len = htons(msg->index);
     if (write(fileno(stdout), &len, sizeof(len)) != sizeof(len))
         errx(EXIT_FAILURE, "write header failed");
 
-    if (write(fileno(stdout), msg.buff, msg.index) != msg.index)
-        errx(EXIT_FAILURE, "write packet failed: %d", msg.index);
+    if (write(fileno(stdout), msg->buff, msg->index) != msg->index)
+        errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
 
-    ei_x_free(&msg);
+    ei_x_free(msg);
 }
-
 
     void
 usage(EPCAP_STATE *ep)
