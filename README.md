@@ -3,6 +3,9 @@ An Erlang port interface to libpcap.
 
 epcap includes a small example program called sniff.
 
+## Changes
+
+0.05: The packet message format has changed and is now documented.
 
 ## QUICK SETUP
 
@@ -35,6 +38,22 @@ epcap includes a small example program called sniff.
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()}
+
+        Packets are delivered as messages:
+
+            {packet, DataLinkType, Time, Length, Packet}
+
+        The DataLinkType is an integer representing the link layer,
+        e.g., ethernet, Linux cooked socket.
+
+        The Time is a tuple in the same format as erlang:now/0, {MegaSecs,
+        Secs, MicroSecs}.
+
+        The Length corresponds to the actual packet length on the
+        wire. The captured packet may have been truncated. To get the
+        captured packet length, use byte_size(Packet).
+
+        The Packet is a binary holding the captured data.
 
 
 ## SCREENSHOT

@@ -80,11 +80,7 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %%
 %% State: sniffing
 %%
-handle_info([
-        {pkthdr, [{time, Time}, {caplen, CapLen}, {len, Len}, {datalink, DLT}]},
-        {packet, Packet}
-    ], sniffing, _) ->
-
+handle_info({packet, DLT, Time, Len, Packet}, sniffing, _) ->
     [Ether, IP, Hdr, Payload] = decode(pkt:link_type(DLT), Packet),
 
     {Saddr, Daddr, Proto} = case IP of
@@ -101,7 +97,7 @@ handle_info([
     end,
     error_logger:info_report([
             {time, timestamp(Time)},
-            {caplen, CapLen},
+            {caplen, byte_size(Packet)},
             {len, Len},
             {datalink, pkt:link_type(DLT)},
 

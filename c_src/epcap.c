@@ -51,7 +51,7 @@ main(int argc, char *argv[])
     int ch = 0;
 
 
-    IS_NULL(ep = (EPCAP_STATE *)calloc(1, sizeof(EPCAP_STATE)));
+    IS_NULL(ep = calloc(1, sizeof(EPCAP_STATE)));
 
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
@@ -240,53 +240,28 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     ei_x_buff msg;
 
 
-    /* [ */
     IS_FALSE(ei_x_new_with_version(&msg));
-    IS_FALSE(ei_x_encode_list_header(&msg, 2));
 
-    /* {pkthdr, [{time, Time}, {caplen, CapLength}, {len, ActualLength}]} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "pkthdr"));
+    /* {packet, DatalinkType, Time, ActualLength, Packet} */
+    IS_FALSE(ei_x_encode_tuple_header(&msg, 5));
+    IS_FALSE(ei_x_encode_atom(&msg, "packet"));
 
-    /* [ */
-    IS_FALSE(ei_x_encode_list_header(&msg, 4));
+    /* DataLinkType */
+    IS_FALSE(ei_x_encode_long(&msg, datalink));
 
-    /* {time, {MegaSec, Sec, MicroSec}} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "time"));
-
+    /* {MegaSec, Sec, MicroSec} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 3));
     IS_FALSE(ei_x_encode_long(&msg, abs(hdr->ts.tv_sec / 1000000)));
     IS_FALSE(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
     IS_FALSE(ei_x_encode_long(&msg, hdr->ts.tv_usec));
 
-    /* {caplen, CaptureLength}} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "caplen"));
-    IS_FALSE(ei_x_encode_long(&msg, hdr->caplen));
-
-    /* {len, ActualLength}} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "len"));
+    /* ActualLength} */
     IS_FALSE(ei_x_encode_long(&msg, hdr->len));
 
-    /* {datalink, DataLinkType} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "datalink"));
-    IS_FALSE(ei_x_encode_long(&msg, datalink));
-
-    /* ] */
-    IS_FALSE(ei_x_encode_empty_list(&msg));
-
-    /* } */
-
-    /* {packet, Packet} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "packet"));
+    /* Packet */
     IS_FALSE(ei_x_encode_binary(&msg, pkt, hdr->caplen));
 
-    /* ] */
-    IS_FALSE(ei_x_encode_empty_list(&msg));
+    /* } */
 
     epcap_send_free(&msg);
 }
