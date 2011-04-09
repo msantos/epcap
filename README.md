@@ -37,7 +37,8 @@ epcap includes a small example program called sniff.
     
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
-                            {user, string()} | {filter, string()} | {progname, string()} | {file, string()}
+                            {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
+                            {monitor, boolean()}
 
         Packets are delivered as messages:
 

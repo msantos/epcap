@@ -85,6 +85,7 @@ extern char *__progname;
 typedef struct {
     pcap_t *p;          /* pcap handle */
     int promisc;        /* promiscuous mode */
+    int rfmon;          /* monitor mode */
     int verbose;        /* debugging messages */
     int runasuser;      /* if setuid, run as the calling user */
     size_t snaplen;     /* packet capture length */

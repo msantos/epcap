@@ -119,6 +119,7 @@ make_args(PL) ->
             group,
             interface,
             file,
+            monitor,
             promiscuous,
             user,
             snaplen,
@@ -132,6 +133,7 @@ get_switch({chroot, Arg})       -> "-d " ++ Arg;
 get_switch({file, Arg})         -> "-f " ++ Arg;
 get_switch({group, Arg})        -> "-g " ++ Arg;
 get_switch({interface, Arg})    -> "-i " ++ Arg;
+get_switch({monitor, true})     -> "-M";
 get_switch({promiscuous, true}) -> "-P";
 get_switch({snaplen, Arg})      -> "-s " ++ integer_to_list(Arg);
 get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);

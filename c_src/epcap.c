@@ -56,7 +56,7 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "d:f:g:hi:Ps:t:u:v")) != -1) {
+    while ( (ch = getopt(argc, argv, "d:f:g:hi:MPs:t:u:v")) != -1) {
         switch (ch) {
             case 'd':   /* chroot directory */
                 IS_NULL(ep->chroot = strdup(optarg));
@@ -70,6 +70,9 @@ main(int argc, char *argv[])
                 break;
             case 'i':
                 IS_NULL(ep->dev = strdup(optarg));
+                break;
+            case 'M':
+                ep->rfmon = 1;
                 break;
             case 'P':
                 ep->promisc = 1;
@@ -151,6 +154,10 @@ epcap_open(EPCAP_STATE *ep)
             PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
 
         PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen, ep->promisc, ep->timeout, errbuf));
+
+        /* monitor mode */
+        if (pcap_can_set_rfmon(ep->p) == 1)
+            (void)pcap_set_rfmon(ep->p, ep->rfmon);
     }
 
     return (0);
@@ -289,6 +296,7 @@ usage(EPCAP_STATE *ep)
             "              -d <directory>   chroot directory\n"
             "              -i <interface>   interface to snoop\n"
             "              -f <filename>    read from file instead of live capture\n"
+            "              -M               wireless monitor (rfmon) mode\n"
             "              -P               promiscuous mode\n"
             "              -g <group>       unprivileged group\n"
             "              -u <user>        unprivileged user\n"
@@ -300,5 +308,3 @@ usage(EPCAP_STATE *ep)
 
     exit (EXIT_FAILURE);
 }
-
-
