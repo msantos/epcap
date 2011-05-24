@@ -142,17 +142,7 @@ get_switch({verbose, _Arg})     -> "-v";
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
 progname() ->
-    filename:join([
-            filename:dirname(code:which(?MODULE)),
-            "..",
-            "priv",
-            ?MODULE
-        ]).
+    filename:join([code:lib_dir(epcap,priv),?MODULE]).
 
 chroot_path() ->
-    filename:join([
-            filename:dirname(code:which(?MODULE)),
-            "..",
-            "priv",
-            "tmp"
-        ]).
+    filename:join([code:lib_dir(epcap,priv),"tmp"]).
