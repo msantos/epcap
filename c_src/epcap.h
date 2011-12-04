@@ -48,7 +48,11 @@
 
 #define SNAPLEN         65535
 #define PROMISC         1       /* true */
-#define TIMEOUT         0       /* ms, 0 = block indefinitely */
+
+/* On Linux, 0 will block until the next packet is received.
+ * On BSD, 0 will block until the snaplen buffer is full.
+ */
+#define TIMEOUT         500     /* ms, 0 = block indefinitely */
 
 #define EPCAP_FILTER    "tcp and port 80"
 
