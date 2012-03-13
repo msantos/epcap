@@ -16,7 +16,7 @@ epcap includes a small example program called sniff.
     sudo visudo
     youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
     
-    erl -pa ebin deps/*/ebin
+    erl -pa ebin deps/*/ebin # or: ./start.sh
 
     % Start the sniffer process
     sniff:start_link().
