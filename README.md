@@ -17,6 +17,7 @@ epcap includes a small example program called sniff.
     youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
     
     erl -pa ebin deps/*/ebin
+
     % Start the gen_server
     sniff:start_link().
     
