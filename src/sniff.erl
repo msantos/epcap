@@ -99,12 +99,12 @@ handle_info({packet, DLT, Time, Len, Packet}, sniffing, _) ->
 
             % Source
             {source_macaddr, string:join(ether_addr(Ether#ether.shost), ":")},
-            {source_address, Saddr},
+            {source_address, inet_parse:ntoa(Saddr)},
             {source_port, port(sport, Hdr)},
 
             % Destination
             {destination_macaddr, string:join(ether_addr(Ether#ether.dhost), ":")},
-            {destination_address, Daddr},
+            {destination_address, inet_parse:ntoa(Daddr)},
             {destination_port, port(dport, Hdr)},
 
             {protocol, pkt:proto(Proto)},
