@@ -18,7 +18,7 @@ epcap includes a small example program called sniff.
     
     erl -pa ebin deps/*/ebin
 
-    % Start the gen_server
+    % Start the sniffer process
     sniff:start_link().
     
     % Use your interface, or leave it out and trust in pcap

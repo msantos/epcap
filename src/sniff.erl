@@ -84,17 +84,13 @@ handle_info({packet, DLT, Time, Len, Packet}, sniffing, _) ->
     [Ether, IP, Hdr, Payload] = decode(pkt:link_type(DLT), Packet),
 
     {Saddr, Daddr, Proto} = case IP of
-        IP when is_record(IP, ipv4) ->
-            S = IP#ipv4.saddr,
-            D = IP#ipv4.daddr,
-            P = IP#ipv4.p,
+        #ipv4{saddr = S, daddr = D, p = P} ->
             {S,D,P};
-        IP when is_record(IP, ipv6) ->
-            S = IP#ipv6.saddr,
-            D = IP#ipv6.daddr,
-            P = IP#ipv6.next,
+
+        #ipv6{saddr = S, daddr = D, next = P} ->
             {S,D,P}
     end,
+
     error_logger:info_report([
             {time, timestamp(Time)},
             {caplen, byte_size(Packet)},
