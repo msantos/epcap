@@ -1,4 +1,4 @@
-%% Copyright (c) 2009-2010, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2009-2011, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -124,6 +124,7 @@ make_args(PL) ->
             user,
             snaplen,
             timeout,
+            verbose,
 
             filter
         ], proplists:lookup(Arg, PL) /= none ],
@@ -138,7 +139,7 @@ get_switch({promiscuous, true}) -> "-P";
 get_switch({snaplen, Arg})      -> "-s " ++ integer_to_list(Arg);
 get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);
 get_switch({user, Arg})         -> "-u " ++ Arg;
-get_switch({verbose, _Arg})     -> "-v";
+get_switch({verbose, Arg})      -> string:copies("-v ", Arg);
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
 progname() ->

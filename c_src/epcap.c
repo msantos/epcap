@@ -210,7 +210,6 @@ epcap_loop(EPCAP_STATE *ep)
         switch (pcap_next_ex(p, &hdr, &pkt)) {
             case 0:     /* timeout */
                 VERBOSE(1, "timeout reading packet");
-                epcap_ctrl("timeout");
                 break;
             case 1:     /* got packet */
                 epcap_response(hdr, pkt, datalink);
