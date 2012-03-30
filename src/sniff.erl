@@ -31,7 +31,7 @@
 -module(sniff).
 -behaviour(gen_fsm).
 
--include("pkt.hrl").
+-include_lib("pkt/include/pkt.hrl").
 
 % Interface
 -export([start/0, start/1, stop/0]).
