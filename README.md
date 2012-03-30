@@ -11,6 +11,7 @@ epcap includes a small example program called sniff.
 
     cd epcap
     make
+    make examples
     
     # Allow your user to epcap with root privs
     sudo visudo
@@ -96,4 +97,3 @@ epcap includes a small example program called sniff.
 
 * Gregory Haskins:
     * application file fix
-
