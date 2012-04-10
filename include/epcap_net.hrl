@@ -30,6 +30,8 @@
 -define(IPPROTO_TCP, 6).
 -define(IPPROTO_UDP, 17).
 -define(IPPROTO_SCTP, 132).
+-define(IPPROTO_GRE, 47).
+
 
 -define(ICMP_ECHOREPLY, 0).
 -define(ICMP_DEST_UNREACH, 3).
@@ -97,6 +99,12 @@
         saddr = {127,0,0,1}, daddr = {127,0,0,1},
         opt = <<>>
     }).
+%% RFC 2784 - Generic Routing Encapsulation (GRE)
+-record(gre, {
+	  c = 0, res0 = 0, ver = 0,
+	  type = ?ETH_P_IP,
+	  chksum = <<>>, res1 = <<>>
+	 }).
 
 -record(ipv6, {
         v = 6, class = 0, flow = 0,
