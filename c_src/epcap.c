@@ -178,7 +178,7 @@ epcap_init(EPCAP_STATE *ep)
 
     if (pcap_lookupnet(ep->dev, &ipaddr, &ipmask, errbuf) == -1) {
         VERBOSE(1, "%s", errbuf);
-        return (-1);
+	ipmask=PCAP_NETMASK_UNKNOWN;
     }
 
     VERBOSE(2, "[%s] Using filter: %s\n", __progname, ep->filt);
