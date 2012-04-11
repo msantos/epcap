@@ -145,8 +145,21 @@ get_switch({user, Arg})         -> "-u " ++ Arg;
 get_switch({verbose, Arg})      -> string:copies("-v ", Arg);
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
+basedir() ->
+    case code:priv_dir(?MODULE) of
+        {error,bad_name} ->
+            filename:join([
+                filename:dirname(code:which(?MODULE)),
+                "..",
+                "priv",
+                ?MODULE
+            ]);
+        _ ->
+            code:priv_dir(?MODULE)
+    end.
+
 progname() ->
-    filename:join([code:lib_dir(epcap,priv),?MODULE]).
+    filename:join([basedir(), ?MODULE]).
 
 chroot_path() ->
-    filename:join([code:lib_dir(epcap,priv),"tmp"]).
+    filename:join([basedir(), "tmp"]).
