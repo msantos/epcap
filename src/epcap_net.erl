@@ -33,6 +33,7 @@
 %%% https://github.com/msantos/pkt
 
 -module(epcap_net).
+-deprecated(module).
 
 -include("epcap_net.hrl").
 
