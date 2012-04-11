@@ -1,4 +1,4 @@
-%% Copyright (c) 2009-2010, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2009-2012, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -540,4 +540,3 @@ compl(N,S) -> compl(N+S).
 
 valid(16#FFFF) -> true;
 valid(_) -> false.
-
