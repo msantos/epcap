@@ -62,7 +62,11 @@ start_link(Pid, Options) ->
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
     Chroot = chroot_path(),
-    Cmd = make_args(Options ++ [{chroot, Chroot}]),
+    Timeout = case os:type() of
+        {unix, linux} -> 0;
+        _ -> 500
+    end,
+    Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{
             pid = Pid,
