@@ -156,8 +156,10 @@ epcap_open(EPCAP_STATE *ep)
         PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen, ep->promisc, ep->timeout, errbuf));
 
         /* monitor mode */
+#ifdef PCAP_ERROR_RFMON_NOTSUP
         if (pcap_can_set_rfmon(ep->p) == 1)
             (void)pcap_set_rfmon(ep->p, ep->rfmon);
+#endif
     }
 
     return (0);
@@ -295,7 +297,9 @@ usage(EPCAP_STATE *ep)
             "              -d <directory>   chroot directory\n"
             "              -i <interface>   interface to snoop\n"
             "              -f <filename>    read from file instead of live capture\n"
+#ifdef PCAP_ERROR_RFMON_NOTSUP
             "              -M               wireless monitor (rfmon) mode\n"
+#endif
             "              -P               promiscuous mode\n"
             "              -g <group>       unprivileged group\n"
             "              -u <user>        unprivileged user\n"
