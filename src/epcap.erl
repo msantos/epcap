@@ -60,6 +60,7 @@ start_link(Pid, Options) ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [Pid, Options], []).
 
 init([Pid, Options]) ->
+    process_flag(trap_exit, true),
     Chroot = chroot_path(),
     Cmd = make_args(Options ++ [{chroot, Chroot}]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
@@ -76,11 +77,9 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 terminate(_Reason, #state{port = Port}) ->
-    try erlang:port_close(Port) of
-        true -> ok
-    catch
-        _:_ -> ok
-    end.
+    catch erlang:port_close(Port),
+    ok.
+
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
