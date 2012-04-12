@@ -97,3 +97,6 @@ epcap includes a small example program called sniff.
 
 * Gregory Haskins:
     * application file fix
+
+* Alexey Larin
+    * support of devices without ipwq
