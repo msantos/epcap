@@ -154,8 +154,8 @@ basedir() ->
                 "priv",
                 ?MODULE
             ]);
-        _ ->
-            code:priv_dir(?MODULE)
+        Dir ->
+            Dir
     end.
 
 progname() ->
