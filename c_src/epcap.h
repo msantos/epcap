@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <err.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include <sys/select.h>
 

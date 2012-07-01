@@ -49,6 +49,7 @@ main(int argc, char *argv[])
     EPCAP_STATE *ep = NULL;
     pid_t pid = 0;
     int ch = 0;
+    int fd = 0;
 
 
     IS_NULL(ep = calloc(1, sizeof(EPCAP_STATE)));
@@ -100,6 +101,8 @@ main(int argc, char *argv[])
 
     IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
 
+    IS_LTZERO(fd = open("/dev/null", O_RDWR));
+
     epcap_priv_issetuid(ep);
     IS_LTZERO(epcap_open(ep));
     if (epcap_priv_drop(ep) < 0)
@@ -109,12 +112,14 @@ main(int argc, char *argv[])
         case -1:
             err(EXIT_FAILURE, "fork");
         case 0:
-            IS_LTZERO(close(STDIN_FILENO));
+            IS_LTZERO(dup2(fd, STDIN_FILENO));
+            IS_LTZERO(close(fd));
             IS_LTZERO(epcap_init(ep));
             epcap_loop(ep);
             break;
         default:
-            if (close(STDOUT_FILENO) != 0)
+            if ( (dup2(fd, STDOUT_FILENO) < 0) ||
+                (close(fd) < 0))
                 goto CLEANUP;
 
             pcap_close(ep->p);
