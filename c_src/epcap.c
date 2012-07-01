@@ -109,18 +109,19 @@ main(int argc, char *argv[])
         case -1:
             err(EXIT_FAILURE, "fork");
         case 0:
-            (void)close(fileno(stdin));
+            IS_LTZERO(close(fileno(stdin)));
             IS_LTZERO(epcap_init(ep));
             epcap_loop(ep);
             break;
         default:
-            (void)close(fileno(stdout));
+            if (close(fileno(stdout)) != 0)
+                goto CLEANUP;
+
             pcap_close(ep->p);
             epcap_watch();
-            (void)kill(pid, SIGTERM);
 
-            free(ep->filt);
-            free(ep);
+CLEANUP:
+            (void)kill(pid, SIGTERM);
             break;
     }
 
@@ -138,7 +139,6 @@ epcap_watch()
     FD_SET(fd, &rfds);
 
     (void)select(fd+1, &rfds, NULL, NULL, NULL);
-
 }
 
 
