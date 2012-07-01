@@ -35,8 +35,12 @@
 #include <unistd.h>
 #include <err.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include <sys/select.h>
+
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <pcap.h>
 
@@ -104,3 +108,4 @@ typedef struct {
 
 int epcap_priv_drop(EPCAP_STATE *ep);
 void epcap_priv_issetuid(EPCAP_STATE *ep);
+int epcap_priv_rlimits(int nfd);

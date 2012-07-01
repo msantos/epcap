@@ -40,7 +40,17 @@ void epcap_ctrl(const char *ctrl_evt);
 void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink);
 void epcap_send_free(ei_x_buff *msg);
 void epcap_watch();
+void gotsig(int sig);
 void usage(EPCAP_STATE *ep);
+
+int child_exited = 0;
+
+/* On some platforms (Linux), poll() (used by pcap)
+ * will return EINVAL if RLIMIT_NOFILES < numfd */
+#ifndef EPCAP_RLIMIT_NOFILES
+#define EPCAP_RLIMIT_NOFILES 0
+#warning "Using default value of EPCAP_RLIMIT_NOFILES=0"
+#endif
 
 
     int
@@ -49,6 +59,7 @@ main(int argc, char *argv[])
     EPCAP_STATE *ep = NULL;
     pid_t pid = 0;
     int ch = 0;
+    int fd = 0;
 
 
     IS_NULL(ep = calloc(1, sizeof(EPCAP_STATE)));
@@ -100,27 +111,39 @@ main(int argc, char *argv[])
 
     IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
 
+    IS_LTZERO(fd = open("/dev/null", O_RDWR));
+
     epcap_priv_issetuid(ep);
     IS_LTZERO(epcap_open(ep));
     if (epcap_priv_drop(ep) < 0)
         exit (1);
 
+    signal(SIGCHLD, gotsig);
+
     switch (pid = fork()) {
         case -1:
             err(EXIT_FAILURE, "fork");
         case 0:
-            (void)close(fileno(stdin));
+            IS_LTZERO(dup2(fd, STDIN_FILENO));
+            IS_LTZERO(close(fd));
             IS_LTZERO(epcap_init(ep));
+            IS_LTZERO(epcap_priv_rlimits(EPCAP_RLIMIT_NOFILES));
             epcap_loop(ep);
             break;
         default:
-            (void)close(fileno(stdout));
-            pcap_close(ep->p);
-            epcap_watch();
-            (void)kill(pid, SIGTERM);
+            if ( (dup2(fd, STDOUT_FILENO) < 0) ||
+                (close(fd) < 0))
+                goto CLEANUP;
 
-            free(ep->filt);
-            free(ep);
+            pcap_close(ep->p);
+
+            if (epcap_priv_rlimits(0) < 0)
+                goto CLEANUP;
+
+            epcap_watch();
+
+CLEANUP:
+            (void)kill(pid, SIGTERM);
             break;
     }
 
@@ -131,14 +154,14 @@ main(int argc, char *argv[])
     void
 epcap_watch()
 {
-    int fd = fileno(stdin);
+    int fd = STDIN_FILENO;
     fd_set rfds;
 
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
 
-    (void)select(fd+1, &rfds, NULL, NULL, NULL);
-
+    if (child_exited == 0)
+        (void)select(fd+1, &rfds, NULL, NULL, NULL);
 }
 
 
@@ -178,7 +201,7 @@ epcap_init(EPCAP_STATE *ep)
 
     if (pcap_lookupnet(ep->dev, &ipaddr, &ipmask, errbuf) == -1) {
         VERBOSE(1, "%s", errbuf);
-	ipmask=PCAP_NETMASK_UNKNOWN;
+        ipmask=PCAP_NETMASK_UNKNOWN;
     }
 
     VERBOSE(2, "[%s] Using filter: %s\n", __progname, ep->filt);
@@ -222,7 +245,7 @@ epcap_loop(EPCAP_STATE *ep)
                 read_packet = 0;
                 break;
             case -1:    /* error reading packet */
-                VERBOSE(1, "error reading packet");
+                VERBOSE(1, "%s", pcap_geterr(p));
                 /* fall through */
             default:
                 read_packet = 0;
@@ -279,13 +302,25 @@ void epcap_send_free(ei_x_buff *msg)
     u_int16_t len = 0;
 
     len = htons(msg->index);
-    if (write(fileno(stdout), &len, sizeof(len)) != sizeof(len))
+    if (write(STDOUT_FILENO, &len, sizeof(len)) != sizeof(len))
         errx(EXIT_FAILURE, "write header failed");
 
-    if (write(fileno(stdout), msg->buff, msg->index) != msg->index)
+    if (write(STDOUT_FILENO, msg->buff, msg->index) != msg->index)
         errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
 
     ei_x_free(msg);
+}
+
+    void
+gotsig(int sig)
+{
+    switch (sig) {
+        case SIGCHLD:
+            child_exited = 1;
+            break;
+        default:
+            break;
+    }
 }
 
     void
