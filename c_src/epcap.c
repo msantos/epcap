@@ -109,12 +109,12 @@ main(int argc, char *argv[])
         case -1:
             err(EXIT_FAILURE, "fork");
         case 0:
-            IS_LTZERO(close(fileno(stdin)));
+            IS_LTZERO(close(STDIN_FILENO));
             IS_LTZERO(epcap_init(ep));
             epcap_loop(ep);
             break;
         default:
-            if (close(fileno(stdout)) != 0)
+            if (close(STDOUT_FILENO) != 0)
                 goto CLEANUP;
 
             pcap_close(ep->p);
@@ -132,7 +132,7 @@ CLEANUP:
     void
 epcap_watch()
 {
-    int fd = fileno(stdin);
+    int fd = STDIN_FILENO;
     fd_set rfds;
 
     FD_ZERO(&rfds);
@@ -279,10 +279,10 @@ void epcap_send_free(ei_x_buff *msg)
     u_int16_t len = 0;
 
     len = htons(msg->index);
-    if (write(fileno(stdout), &len, sizeof(len)) != sizeof(len))
+    if (write(STDOUT_FILENO, &len, sizeof(len)) != sizeof(len))
         errx(EXIT_FAILURE, "write header failed");
 
-    if (write(fileno(stdout), msg->buff, msg->index) != msg->index)
+    if (write(STDOUT_FILENO, msg->buff, msg->index) != msg->index)
         errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
 
     ei_x_free(msg);
