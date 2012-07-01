@@ -87,3 +87,28 @@ epcap_priv_issetuid(EPCAP_STATE *ep)
         IS_LTZERO(setuid(getuid()));
     }
 }
+
+    int
+epcap_priv_rlimits(int nfd)
+{
+    struct rlimit rl = {0};
+
+#ifdef RLIMIT_FSIZE
+    if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
+        return -1;
+#endif
+
+#ifdef RLIMIT_NPROC
+    if (setrlimit(RLIMIT_NPROC, &rl) != 0)
+        return -1;
+#endif
+
+#ifdef RLIMIT_NOFILE
+    rl.rlim_cur = nfd;
+    rl.rlim_max = nfd;
+    if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+        return -1;
+#endif
+
+    return 0;
+}

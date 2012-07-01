@@ -115,6 +115,9 @@ main(int argc, char *argv[])
             IS_LTZERO(dup2(fd, STDIN_FILENO));
             IS_LTZERO(close(fd));
             IS_LTZERO(epcap_init(ep));
+            /* poll() (used by pcap) will return EINVAL
+             * if RLIMIT_NOFILES < numfd */
+            IS_LTZERO(epcap_priv_rlimits(1));
             epcap_loop(ep);
             break;
         default:
@@ -123,6 +126,10 @@ main(int argc, char *argv[])
                 goto CLEANUP;
 
             pcap_close(ep->p);
+
+            if (epcap_priv_rlimits(0) < 0)
+                goto CLEANUP;
+
             epcap_watch();
 
 CLEANUP:
@@ -143,6 +150,7 @@ epcap_watch()
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
 
+            (void)fprintf(stderr, "select\n");
     (void)select(fd+1, &rfds, NULL, NULL, NULL);
 }
 
@@ -183,7 +191,7 @@ epcap_init(EPCAP_STATE *ep)
 
     if (pcap_lookupnet(ep->dev, &ipaddr, &ipmask, errbuf) == -1) {
         VERBOSE(1, "%s", errbuf);
-	ipmask=PCAP_NETMASK_UNKNOWN;
+        ipmask=PCAP_NETMASK_UNKNOWN;
     }
 
     VERBOSE(2, "[%s] Using filter: %s\n", __progname, ep->filt);
