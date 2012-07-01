@@ -45,6 +45,12 @@ void usage(EPCAP_STATE *ep);
 
 int child_exited = 0;
 
+/* On some platforms (Linux), poll() (used by pcap)
+ * will return EINVAL if RLIMIT_NOFILES < numfd */
+#ifndef EPCAP_RLIMIT_NOFILES
+#define EPCAP_RLIMIT_NOFILES 0
+#endif
+
 
     int
 main(int argc, char *argv[])
@@ -120,9 +126,7 @@ main(int argc, char *argv[])
             IS_LTZERO(dup2(fd, STDIN_FILENO));
             IS_LTZERO(close(fd));
             IS_LTZERO(epcap_init(ep));
-            /* poll() (used by pcap) will return EINVAL
-             * if RLIMIT_NOFILES < numfd */
-            IS_LTZERO(epcap_priv_rlimits(1));
+            IS_LTZERO(epcap_priv_rlimits(EPCAP_RLIMIT_NOFILES));
             epcap_loop(ep);
             break;
         default:
