@@ -49,6 +49,7 @@ int child_exited = 0;
  * will return EINVAL if RLIMIT_NOFILES < numfd */
 #ifndef EPCAP_RLIMIT_NOFILES
 #define EPCAP_RLIMIT_NOFILES 0
+#warning "Using default value of EPCAP_RLIMIT_NOFILES=0"
 #endif
 
 
