@@ -40,7 +40,10 @@ void epcap_ctrl(const char *ctrl_evt);
 void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink);
 void epcap_send_free(ei_x_buff *msg);
 void epcap_watch();
+void gotsig(int sig);
 void usage(EPCAP_STATE *ep);
+
+int child_exited = 0;
 
 
     int
@@ -108,6 +111,8 @@ main(int argc, char *argv[])
     if (epcap_priv_drop(ep) < 0)
         exit (1);
 
+    signal(SIGCHLD, gotsig);
+
     switch (pid = fork()) {
         case -1:
             err(EXIT_FAILURE, "fork");
@@ -150,8 +155,8 @@ epcap_watch()
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
 
-            (void)fprintf(stderr, "select\n");
-    (void)select(fd+1, &rfds, NULL, NULL, NULL);
+    if (child_exited == 0)
+        (void)select(fd+1, &rfds, NULL, NULL, NULL);
 }
 
 
@@ -299,6 +304,18 @@ void epcap_send_free(ei_x_buff *msg)
         errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
 
     ei_x_free(msg);
+}
+
+    void
+gotsig(int sig)
+{
+    switch (sig) {
+        case SIGCHLD:
+            child_exited = 1;
+            break;
+        default:
+            break;
+    }
 }
 
     void
