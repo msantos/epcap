@@ -227,7 +227,7 @@ epcap_loop(EPCAP_STATE *ep)
                 read_packet = 0;
                 break;
             case -1:    /* error reading packet */
-                VERBOSE(1, "error reading packet");
+                VERBOSE(1, "%s", pcap_geterr(p));
                 /* fall through */
             default:
                 read_packet = 0;
