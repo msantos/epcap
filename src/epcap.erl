@@ -29,21 +29,19 @@
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(epcap).
+
 -behaviour(gen_server).
 
--define(SERVER, ?MODULE).
-
--export([start/0, start/1, start/2, stop/0]).
+%% API
+-export([start/0, start/1, start/2, stop/1]).
 -export([start_link/2]).
 -export([progname/0]).
+
+%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-            terminate/2, code_change/3]).
+         terminate/2, code_change/3]).
 
--record(state, {
-    pid,
-    port
-}).
-
+-record(state, {pid :: pid(), port :: port()}).
 
 start() ->
     start_link(self(), []).
@@ -52,12 +50,11 @@ start(Options) ->
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     start_link(Pid, Options).
 
-stop() ->
-    gen_server:call(?SERVER, stop).
-
-
 start_link(Pid, Options) ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [Pid, Options], []).
+    gen_server:start_link(?MODULE, [Pid, Options], []).
+
+stop(Pid) ->
+    gen_server:call(Pid, stop).
 
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
@@ -68,11 +65,7 @@ init([Pid, Options]) ->
     end,
     Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
-    {ok, #state{
-            pid = Pid,
-            port = Port
-        }}.
-
+    {ok, #state{pid = Pid, port = Port}}.
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
@@ -86,7 +79,6 @@ terminate(_Reason, #state{port = Port}) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
 
 %%--------------------------------------------------------------------
 %%% Port communication
@@ -107,7 +99,6 @@ handle_info(Info, State) ->
     error_logger:error_report([{wtf, Info}]),
     {noreply, State}.
 
-
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
@@ -117,7 +108,7 @@ make_args(PL) ->
         false -> "sudo "
     end,
     proplists:get_value(progname, PL, Sudo ++ progname()) ++ " " ++
-    string:join([ get_switch(proplists:lookup(Arg, PL)) || Arg <- [
+    string:join([get_switch(proplists:lookup(Arg, PL)) || Arg <- [
             chroot,
             group,
             interface,
@@ -130,8 +121,7 @@ make_args(PL) ->
             verbose,
 
             filter
-        ], proplists:lookup(Arg, PL) /= none ],
-    " ").
+        ], proplists:lookup(Arg, PL) /= none ], " ").
 
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
 get_switch({file, Arg})         -> "-f " ++ Arg;
