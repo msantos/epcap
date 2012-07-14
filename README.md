@@ -6,6 +6,7 @@ epcap includes a small example program called sniff.
 ## Changes
 
 0.05: The packet message format has changed and is now documented.
+0.06: epcap doesn't register itself, so multiple instances can be run.
 
 ## QUICK SETUP
 
@@ -34,8 +35,8 @@ epcap includes a small example program called sniff.
 
 ## USAGE
 
-    epcap:start() -> pid()
-    epcap:start(Args) -> pid()
+    epcap:start() -> {ok, pid()}
+    epcap:start(Args) -> {ok, pid()}
     
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
@@ -100,3 +101,6 @@ epcap includes a small example program called sniff.
 
 * Alexey Larin
     * support of devices without ipwq
+
+* Artem Teslenko
+    * allow listening on different interfaces
