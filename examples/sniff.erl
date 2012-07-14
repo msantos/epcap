@@ -44,6 +44,10 @@
 
 -define(is_print(C), C >= $ , C =< $~).
 
+-record(state, {
+        pid
+        }).
+
 
 %%--------------------------------------------------------------------
 %%% Interface
@@ -52,8 +56,8 @@ start() ->
     start([{filter, "tcp and port 80"},
             {interface, "en1"},
             {chroot, "priv/tmp"}]).
-start(Arg) when is_list(Arg) ->
-    gen_fsm:send_event(?MODULE, {start, Arg}).
+start(Opt) when is_list(Opt) ->
+    gen_fsm:send_event(?MODULE, {start, Opt}).
 
 stop() ->
     gen_fsm:send_event(?MODULE, stop).
@@ -67,7 +71,7 @@ start_link() ->
 
 init([]) ->
     process_flag(trap_exit, true),
-    {ok, waiting, []}.
+    {ok, waiting, #state{}}.
 
 
 handle_event(_Event, StateName, State) ->
@@ -80,7 +84,7 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %%
 %% State: sniffing
 %%
-handle_info({packet, DLT, Time, Len, Packet}, sniffing, _) ->
+handle_info({packet, DLT, Time, Len, Packet}, sniffing, State) ->
     [Ether, IP, Hdr, Payload] = decode(pkt:link_type(DLT), Packet),
 
     {Saddr, Daddr, Proto} = case IP of
@@ -113,19 +117,19 @@ handle_info({packet, DLT, Time, Len, Packet}, sniffing, _) ->
             {payload_bytes, byte_size(Payload)},
             {payload, payload(Payload)}
         ]),
-    {next_state, sniffing, []};
+    {next_state, sniffing, State};
 
 % epcap port stopped
-handle_info({'EXIT', _Pid, normal}, sniffing, _) ->
-    {next_state, sniffing, []};
+handle_info({'EXIT', _Pid, normal}, sniffing, State) ->
+    {next_state, sniffing, State};
 
 %%
 %% State: waiting
 %%
 
 % epcap port stopped
-handle_info({'EXIT', _Pid, normal}, waiting, _) ->
-    {next_state, waiting, []}.
+handle_info({'EXIT', _Pid, normal}, waiting, State) ->
+    {next_state, waiting, State}.
 
 
 terminate(_Reason, _StateName, _State) ->
@@ -138,17 +142,17 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% States
 %%--------------------------------------------------------------------
-waiting({start, Arg}, _) ->
-    epcap:start(Arg),
-    {next_state, sniffing, []}.
+waiting({start, Opt}, State) ->
+    {ok, Pid} = epcap:start(Opt),
+    {next_state, sniffing, State#state{pid = Pid}}.
 
-sniffing({start, Arg}, _) ->
-    epcap:stop(),
-    epcap:start(Arg),
-    {next_state, sniffing, Arg};
-sniffing(stop, _) ->
-    epcap:stop(),
-    {next_state, waiting, []}.
+sniffing({start, Opt}, #state{pid = Pid} = State) ->
+    epcap:stop(Pid),
+    {ok, Pid1} = epcap:start(Opt),
+    {next_state, sniffing, State#state{pid = Pid1}};
+sniffing(stop, #state{pid = Pid} = State) ->
+    epcap:stop(Pid),
+    {next_state, waiting, State}.
 
 
 %%--------------------------------------------------------------------
