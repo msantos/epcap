@@ -44,6 +44,10 @@
 
 #include <pcap.h>
 
+#if !defined(PCAP_NETMASK_UNKNOWN)
+#define PCAP_NETMASK_UNKNOWN    0xffffffff
+#endif
+
 #define EPCAP_VERSION   "0.03"
 
 #define MAXBUFLEN       4096    /* Largest message accepted on stdin */
