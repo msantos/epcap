@@ -1,0 +1,17 @@
+case os:getenv("PFRING") of
+    false ->
+        CONFIG;
+    Value ->
+        case filelib:is_dir(Value) of
+            true ->
+                case lists:keysearch(port_env, 1, CONFIG) of
+                    {value, {port_env, Flags}} ->
+                        {"EXE_LDFLAGS", LDFLAGS} = hd(Flags),
+                        NewFlags = LDFLAGS ++ " -static -L " ++ Value ++ " -lpfring -lpthread",
+                        NewLDFLAGS = lists:keyreplace("EXE_LDFLAGS", 1, Flags, {"EXE_LDFLAGS", NewFlags}),
+                        lists:keyreplace(port_env, 1, CONFIG, {port_env, NewLDFLAGS});
+                    _ -> CONFIG
+                end;
+            _ -> CONFIG
+        end
+end.
