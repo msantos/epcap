@@ -62,7 +62,7 @@ epcap includes a small example program called sniff.
 ## PF_RING
 
         In case you want to compile epcap with PF_RING support,
-        just specify the path to the libpfring and modified libpcap
+        just specify the path to the libpfring and modified libpcap libraries
         via shell variable PFRING.
 
             PFRING=/home/user/pfring make
