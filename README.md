@@ -59,6 +59,17 @@ epcap includes a small example program called sniff.
         The Packet is a binary holding the captured data.
 
 
+## PF_RING
+
+        In case you want to compile epcap with PF_RING support,
+        just specify the path to the libpfring and modified libpcap
+        via shell variable PFRING.
+
+            PFRING=/home/user/pfring make
+
+        As a result epcap binary will be linked with the following flags: -static -lpfring -lpthread
+
+
 ## SCREENSHOT
 
     =INFO REPORT==== 6-Jan-2010::20:35:18 ===
