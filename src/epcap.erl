@@ -59,6 +59,7 @@ stop(Pid) ->
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
     Chroot = chroot_path(),
+    ok = filelib:ensure_dir(filename:join(Chroot, "dummy")),
     Timeout = case os:type() of
         {unix, linux} -> 0;
         _ -> 500
