@@ -41,7 +41,7 @@ epcap includes a small example program called sniff.
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
-                            {monitor, boolean()}
+                            {monitor, boolean() | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}}
 
         Packets are delivered as messages:
 
@@ -69,6 +69,15 @@ epcap includes a small example program called sniff.
             PFRING=/home/user/pfring make
 
         As a result epcap binary will be linked with the following flags: -static -lpfring -lpthread
+
+        To complete the configuration you need to set up the cluster_id option.
+        The value of the cluster_id option is integer and should be in range between 0 and 255.
+
+            epcap:start([{interface, "lo"}, {cluster_id, 2}]).
+
+        You can also specify the option cpu_affinity to set up CPU affinity for epcap port:
+
+            epcap:start([{interface, "lo"}, {cluster_id, 2}, {cpu_affinity, "1,3,5-7"}]).
 
 
 ## SCREENSHOT
