@@ -65,6 +65,7 @@ init([Pid, Options]) ->
         _ -> 500
     end,
     Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
+    io:format("CMD: ~p~n", [Cmd]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{pid = Pid, port = Port}}.
 
@@ -108,7 +109,7 @@ make_args(PL) ->
         true -> "";
         false -> "sudo "
     end,
-    proplists:get_value(progname, PL, Sudo ++ progname()) ++ " " ++
+    proplists:get_value(progname, PL, Sudo ++ pfring(PL) ++ cpu_affinity(PL) ++ progname()) ++ " " ++
     string:join([get_switch(proplists:lookup(Arg, PL)) || Arg <- [
             chroot,
             group,
@@ -120,9 +121,9 @@ make_args(PL) ->
             snaplen,
             timeout,
             verbose,
-
-            filter
-        ], proplists:lookup(Arg, PL) /= none ], " ").
+            filter,
+            pfring
+        ], proplists:lookup(Arg, PL) /= none], " ").
 
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
 get_switch({file, Arg})         -> "-f " ++ Arg;
@@ -136,9 +137,10 @@ get_switch({user, Arg})         -> "-u " ++ Arg;
 get_switch({verbose, Arg})      -> string:copies("-v ", Arg);
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
+-spec basedir() -> string().
 basedir() ->
     case code:priv_dir(?MODULE) of
-        {error,bad_name} ->
+        {error, bad_name} ->
             filename:join([
                 filename:dirname(code:which(?MODULE)),
                 "..",
@@ -149,8 +151,26 @@ basedir() ->
             Dir
     end.
 
+-spec progname() -> string().
 progname() ->
     filename:join([basedir(), ?MODULE]).
 
+-spec chroot_path() -> string().
 chroot_path() ->
     filename:join([basedir(), "tmp"]).
+
+-spec pfring([proplists:property()]) -> string().
+pfring(Options) ->
+    case proplists:get_value(cluster_id, Options) of
+        undefined -> "";
+        Value ->
+            "PCAP_PF_RING_CLUSTER_ID=" ++ integer_to_list(Value) ++ " "
+    end.
+
+-spec cpu_affinity([proplists:property()]) -> string().
+cpu_affinity(Options) ->
+    case proplists:get_value(cpu_affinity, Options) of
+        undefined -> "";
+        CPUs ->
+            "taskset -c " ++ CPUs ++ " "
+    end.
