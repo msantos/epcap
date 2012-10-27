@@ -65,7 +65,6 @@ init([Pid, Options]) ->
         _ -> 500
     end,
     Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
-    io:format("CMD: ~p~n", [Cmd]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{pid = Pid, port = Port}}.
 
