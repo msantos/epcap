@@ -35,7 +35,6 @@
 %% API
 -export([start/0, start/1, start/2, stop/1]).
 -export([start_link/2]).
--export([progname/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
