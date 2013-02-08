@@ -58,7 +58,12 @@ stop(Pid) ->
 
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
-    Chroot = chroot_path(),
+    Chroot = case proplists:get_value(chroot, Options) of
+        undefined ->
+            filename:join([basedir(), "tmp"]);
+        Value ->
+            Value
+    end,
     ok = filelib:ensure_dir(filename:join(Chroot, "dummy")),
     Timeout = case os:type() of
         {unix, linux} -> 0;
@@ -153,10 +158,6 @@ basedir() ->
 -spec progname() -> string().
 progname() ->
     filename:join([basedir(), ?MODULE]).
-
--spec chroot_path() -> string().
-chroot_path() ->
-    filename:join([basedir(), "tmp"]).
 
 -spec pfring([proplists:property()]) -> string().
 pfring(Options) ->
