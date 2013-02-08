@@ -125,8 +125,7 @@ make_args(PL) ->
             snaplen,
             timeout,
             verbose,
-            filter,
-            pfring
+            filter
         ], proplists:lookup(Arg, PL) /= none], " ").
 
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
