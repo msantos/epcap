@@ -35,7 +35,6 @@
 %% API
 -export([start/0, start/1, start/2, stop/1]).
 -export([start_link/2]).
--export([progname/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -58,7 +57,12 @@ stop(Pid) ->
 
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
-    Chroot = chroot_path(),
+    Chroot = case proplists:get_value(chroot, Options) of
+        undefined ->
+            filename:join([basedir(), "tmp"]);
+        Value ->
+            Value
+    end,
     ok = filelib:ensure_dir(filename:join(Chroot, "dummy")),
     Timeout = case os:type() of
         {unix, linux} -> 0;
@@ -120,8 +124,7 @@ make_args(PL) ->
             snaplen,
             timeout,
             verbose,
-            filter,
-            pfring
+            filter
         ], proplists:lookup(Arg, PL) /= none], " ").
 
 get_switch({chroot, Arg})       -> "-d " ++ Arg;
@@ -153,10 +156,6 @@ basedir() ->
 -spec progname() -> string().
 progname() ->
     filename:join([basedir(), ?MODULE]).
-
--spec chroot_path() -> string().
-chroot_path() ->
-    filename:join([basedir(), "tmp"]).
 
 -spec pfring([proplists:property()]) -> string().
 pfring(Options) ->
