@@ -37,7 +37,7 @@ s()->
 			C = parser_combinator_bitstring:pBinarystringCaseInsensitive(<<"thema">>),
 			E = parser_combinator_bitstring:pBetweenN(B, C,14),
 			parser_combinator_bitstring:parse(E,Payload) end,
-    {ok, Result2} = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFun2},{meldung, "Found: www.heise.de*Meldung*"}]}]),
+    {ok, Result2} = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFun2},{message, "Found: www.heise.de*Meldung*"}]}]),
     io:format("Start result 1: ~p~n",[Result2]).
 
 
