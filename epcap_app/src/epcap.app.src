@@ -1,0 +1,7 @@
+{application, epcap, [
+    {description, "libpcap port"},
+    {vsn, "0.06"},
+    {registered,[ epcap_server, epcap_root_sup]},
+    {applications, [kernel]},
+    {mod, {epcap_app,[]}}
+]}.
