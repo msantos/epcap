@@ -158,6 +158,7 @@ handle_info({packet, DLT, Time, Len, Packet}, State) ->
 	    ok;
 	_     ->
 	    error_logger:info_msg("Logging: Instance: ~p, PID: ~p, at ~p~n",[State#state.instance, self(),epcap_lib:timestamp(Time)]),
+	    error_logger:info_msg("Message: ~p~n",[State#state.message]),
 	    error_logger:info_report([
 				      self(),	   
 				      {time, epcap_lib:timestamp(Time)},
