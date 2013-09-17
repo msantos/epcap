@@ -25,7 +25,7 @@ s()->
 			E = parser_combinator_bitstring:pBetweenN(B, C,14),
 			parser_combinator_bitstring:parse(E,Payload) end,
 
-    Result1 = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFun1}]}, {message, "Found: www.heise.de*Meldung*"}]),	
+    Result1 = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFun1}, {message, "Found: www.heise.de*Meldung*"}]}]),	
     io:format("Result: ~p~n",[Result1]),
     start(1000).
 
@@ -35,7 +35,7 @@ start(0)->
 start(Number) ->
     %% just simulate to create load
     MatchFunNeverMatch = fun(_Payload) -> fail end,
-    Result1 = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFunNeverMatch}], {message, "This message should never ocurr!!!"}}]),	
+    Result1 = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFunNeverMatch}, {message, "Found: www.heise.de*Meldung*"}]}]),	
     io:format("Result: ~p~n",[Result1]),
     start(Number-1).
 
