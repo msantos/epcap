@@ -28,9 +28,3 @@ s()->
     Result1 = rule:start([{epcap,[{interface, "eth0"}]}, {content, [{matchfun, MatchFun1}, {message, "Found: www.heise.de*Meldung*"}]}]),
     io:format("Result: ~p~n",[Result1]).
 
-
-
-%%start_link(Pid, Options) ->
-%%    gen_server:start_link({local, ?MODULE}, ?MODULE, [Pid, Options], []).
-%%[{{range,0,80},{range,0,100}, {message,"A heise article had been detected"}, {content, Filter}]. 
-
