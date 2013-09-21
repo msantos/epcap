@@ -136,7 +136,9 @@ handle_info(timeout, State) ->
 		  _ -> 500
 	      end,
     Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
+    io:format("~nOpen Port: ~p~n",[Cmd]),	
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
+    io:format("Port: ~p~n",[Port]),	
     {noreply, State#state{port = Port}};
 
  						% WTF
