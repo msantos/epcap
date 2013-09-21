@@ -187,9 +187,10 @@ basedir() ->
         {error, bad_name} ->
             filename:join([
 			   filename:dirname(code:which(?MODULE)),
-			   "../..", %% changed by mj
-			   "priv" %,
-			   %% ?MODULE commented out by mj
+			   "..",
+                           "..",
+                           "epcap_nif",
+			   "priv" 
 			  ]);
         Dir ->
             Dir
@@ -197,7 +198,7 @@ basedir() ->
 
 -spec progname() -> string().
 progname() ->
-    filename:join([basedir(), epcap]). %% commented out by mj: ?MODULE]).
+    filename:join([basedir(), 'epcap']). 
 
 -spec pfring([proplists:property()]) -> string().
 pfring(Options) ->
