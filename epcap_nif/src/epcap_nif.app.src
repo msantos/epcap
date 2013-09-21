@@ -1,0 +1,7 @@
+{application, epcap_nif, [
+    {description, "epcap nif"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [kernel, stdlib]},
+    {modules, [epcap]}
+]}.
