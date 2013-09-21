@@ -1,4 +1,0 @@
-{application, epcap, [
-    {description, "libpcap port"},
-    {vsn, "0.06"}
-]}.

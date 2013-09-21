@@ -1,0 +1,6 @@
+{application, rule, [
+    {description, "rule"},
+    {vsn, "0.01"},
+    {registered,[]},
+    {applications, []}
+]}.

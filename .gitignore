@@ -3,3 +3,4 @@ priv
 deps
 *.[oa]
 *.beam
+*.*~

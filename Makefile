@@ -20,7 +20,3 @@ clean: $(REBAR)
 
 deps: $(REBAR)
 	@$(REBAR) check-deps || $(REBAR) get-deps
-
-examples: eg
-eg:
-	@erlc -I deps -o ebin examples/*.erl

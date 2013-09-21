@@ -1,0 +1,7 @@
+{application, content, [
+    {description, "content rule"},
+    {vsn, "0.01"},
+    {registered,[content_server, content_root_sup]},
+    {applications, [kernel, epcap]}, 
+    {mod, {content_app,[]}}
+]}.
