@@ -154,12 +154,12 @@ epcap includes a small example program called sniff.
 * make it distributed application
 * add futher applications
 
-## Recommemded Books:
+## Interesting Books:
 
 Erlang and OTP in Action, Martin Logan, Eric Merritt, Richard Carlsson / for Erlang OTP
 
 For intrusion detection:
-Snort Intrusion Detection and Prevention Toolkit (Jay Beale's Open Source Security) von Brian Caswell, Jay Beale und Andrew Baker von Syngress (17. Dezember 2006) 
+Snort 2.0 Intrusion Detectionby Brian Caswell, Jeffrey Pusluns and Jay Beale from Syngress Media (May 1st 2003) 
 
 
 ## CONTRIBUTORS
