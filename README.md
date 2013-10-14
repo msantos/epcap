@@ -7,6 +7,7 @@ epcap includes a small example program called sniff.
 
 0.05: The packet message format has changed and is now documented.
 0.06: epcap doesn't register itself, so multiple instances can be run.
+0.7.0: removed epcap\_net.erl (moved to https://github.com/msantos/pkt)
 
 ## QUICK SETUP
 
