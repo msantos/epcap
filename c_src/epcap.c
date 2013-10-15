@@ -171,13 +171,14 @@ epcap_send(EPCAP_STATE *ep)
         n = read_exact(fd, buf, sizeof(len));
 
         if (n != sizeof(len)) {
-            VERBOSE(1, "epcap_send: header len != %u: %d", sizeof(len), n);
+            VERBOSE(1, "epcap_send: header len != %lu: %ld",
+                    (unsigned long)sizeof(len), (long)n);
             return;
         }
 
         len = (buf[0] << 8) | buf[1];
 
-        VERBOSE(2, "epcap_send: packet len = %d", len);
+        VERBOSE(2, "epcap_send: packet len = %u", len);
 
         if (len >= sizeof(buf))
             return;
@@ -185,7 +186,8 @@ epcap_send(EPCAP_STATE *ep)
         n = read_exact(fd, buf, len);
 
         if (n != len) {
-            VERBOSE(1, "epcap_send: len = %d, read = %d", len, n);
+            VERBOSE(1, "epcap_send: len = %u, read = %ld",
+                    len, (long)n);
             return;
         }
 
@@ -197,11 +199,12 @@ epcap_send(EPCAP_STATE *ep)
                 return;
             }
             else if (n != len) {
-                VERBOSE(1, "epcap_send: len = %d, sent = %d", len, n);
+                VERBOSE(1, "epcap_send: len = %u, sent = %ld",
+                        len, (long)n);
             }
         }
         else {
-            VERBOSE(2, "epcap_send: ignoring: len = %d", len);
+            VERBOSE(2, "epcap_send: ignoring: len = %u", len);
         }
     }
 }
