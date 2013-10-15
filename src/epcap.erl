@@ -35,6 +35,7 @@
 %% API
 -export([start/0, start/1, start/2, stop/1]).
 -export([start_link/2]).
+-export([send/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -51,6 +52,9 @@ start(Pid, Options) when is_pid(Pid), is_list(Options) ->
 
 start_link(Pid, Options) ->
     gen_server:start_link(?MODULE, [Pid, Options], []).
+
+send(Pid, Packet) when is_pid(Pid), is_binary(Packet), byte_size(Packet) < 16#ffff ->
+    gen_server:call(Pid, {send, Packet}, infinity).
 
 stop(Pid) ->
     gen_server:call(Pid, stop).
@@ -71,6 +75,16 @@ init([Pid, Options]) ->
     Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{pid = Pid, port = Port}}.
+
+handle_call({send, Packet}, _From, #state{port = Port} = State) ->
+    Reply = try erlang:port_command(Port, Packet) of
+        true ->
+            ok
+        catch
+            error:badarg ->
+                {error,closed}
+        end,
+    {reply, Reply, State};
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
@@ -120,6 +134,7 @@ make_args(PL) ->
             file,
             monitor,
             promiscuous,
+            inject,
             user,
             snaplen,
             timeout,
@@ -137,6 +152,7 @@ get_switch({snaplen, Arg})      -> "-s " ++ integer_to_list(Arg);
 get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);
 get_switch({user, Arg})         -> "-u " ++ Arg;
 get_switch({verbose, Arg})      -> string:copies("-v ", Arg);
+get_switch({inject, true})      -> "-X";
 get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
 
 -spec basedir() -> string().

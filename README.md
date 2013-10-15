@@ -43,7 +43,8 @@ epcap includes a small example program called sniff.
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
-                            {monitor, boolean() | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}}
+                            {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
+                            {inject, boolean()}
 
         Packets are delivered as messages:
 
@@ -52,8 +53,9 @@ epcap includes a small example program called sniff.
         The DataLinkType is an integer representing the link layer,
         e.g., ethernet, Linux cooked socket.
 
-        The Time is a tuple in the same format as erlang:now/0, {MegaSecs,
-        Secs, MicroSecs}.
+        The Time is a tuple in the same format as erlang:now/0:
+
+        {MegaSecs, Secs, MicroSecs}
 
         The Length corresponds to the actual packet length on the
         wire. The captured packet may have been truncated. To get the
@@ -61,6 +63,20 @@ epcap includes a small example program called sniff.
 
         The Packet is a binary holding the captured data.
 
+    epcap:send(Ref, Packet) -> ok
+
+        Types   Ref = pid()
+                Packet = binary()
+
+        Inject a packet on the network interface. To enable sending
+        packets, start/1 must be called with the {inject, true} option
+        (default: {inject, false}). When disabled, any data sent
+        to the epcap port is silently discarded.
+
+        Packet injection failures are treated as fatal errors, terminating
+        the epcap port. Partial writes are not considered to be errors
+        and are ignored (an error message will be printed to stderr if
+        the verbose option is used).
 
 ## PF_RING
 

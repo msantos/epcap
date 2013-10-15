@@ -39,8 +39,9 @@ void epcap_loop(EPCAP_STATE *ep);
 void epcap_ctrl(const char *ctrl_evt);
 void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink);
 void epcap_send_free(ei_x_buff *msg);
-void epcap_watch();
+void epcap_send(EPCAP_STATE *ep);
 void gotsig(int sig);
+static ssize_t read_exact(int fd, void *buf, ssize_t len);
 void usage(EPCAP_STATE *ep);
 
 int child_exited = 0;
@@ -67,7 +68,7 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "d:f:g:hi:MPs:t:u:v")) != -1) {
+    while ( (ch = getopt(argc, argv, "d:f:g:hi:MPs:t:u:vX")) != -1) {
         switch (ch) {
             case 'd':   /* chroot directory */
                 IS_NULL(ep->chroot = strdup(optarg));
@@ -99,6 +100,9 @@ main(int argc, char *argv[])
                 break;
             case 'v':
                 ep->verbose++;
+                break;
+            case 'X':
+                ep->inject = 1;
                 break;
             case 'h':
             default:
@@ -135,12 +139,13 @@ main(int argc, char *argv[])
                 (close(fd) < 0))
                 goto CLEANUP;
 
-            pcap_close(ep->p);
+            if (!ep->inject)
+                pcap_close(ep->p);
 
             if (epcap_priv_rlimits(0) < 0)
                 goto CLEANUP;
 
-            epcap_watch();
+            epcap_send(ep);
 
 CLEANUP:
             (void)kill(pid, SIGTERM);
@@ -152,16 +157,53 @@ CLEANUP:
 
 
     void
-epcap_watch()
+epcap_send(EPCAP_STATE *ep)
 {
     int fd = STDIN_FILENO;
-    fd_set rfds;
+    ssize_t n = 0;
+    unsigned char buf[SNAPLEN] = {0};
+    u_int16_t len = 0;
 
-    FD_ZERO(&rfds);
-    FD_SET(fd, &rfds);
+    for ( ; ; ) {
+        if (child_exited)
+            return;
 
-    if (child_exited == 0)
-        (void)select(fd+1, &rfds, NULL, NULL, NULL);
+        n = read_exact(fd, buf, sizeof(len));
+
+        if (n != sizeof(len)) {
+            VERBOSE(1, "epcap_send: header len != %u: %d", sizeof(len), n);
+            return;
+        }
+
+        len = (buf[0] << 8) | buf[1];
+
+        VERBOSE(2, "epcap_send: packet len = %d", len);
+
+        if (len >= sizeof(buf))
+            return;
+
+        n = read_exact(fd, buf, len);
+
+        if (n != len) {
+            VERBOSE(1, "epcap_send: len = %d, read = %d", len, n);
+            return;
+        }
+
+        if (ep->inject) {
+            n = pcap_inject(ep->p, buf, len);
+
+            if (n < 0) {
+                VERBOSE(0, "epcap_send: %s", pcap_geterr(ep->p));
+                return;
+            }
+            else if (n != len) {
+                VERBOSE(1, "epcap_send: len = %d, sent = %d", len, n);
+            }
+        }
+        else {
+            VERBOSE(2, "epcap_send: ignoring: len = %d", len);
+        }
+    }
 }
 
 
@@ -201,7 +243,7 @@ epcap_init(EPCAP_STATE *ep)
 
     if (pcap_lookupnet(ep->dev, &ipaddr, &ipmask, errbuf) == -1) {
         VERBOSE(1, "%s", errbuf);
-        ipmask=PCAP_NETMASK_UNKNOWN;
+        ipmask = PCAP_NETMASK_UNKNOWN;
     }
 
     VERBOSE(2, "[%s] Using filter: %s\n", __progname, ep->filt);
@@ -297,7 +339,8 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     epcap_send_free(&msg);
 }
 
-void epcap_send_free(ei_x_buff *msg)
+    void
+epcap_send_free(ei_x_buff *msg)
 {
     u_int16_t len = 0;
 
@@ -309,6 +352,21 @@ void epcap_send_free(ei_x_buff *msg)
         errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
 
     ei_x_free(msg);
+}
+
+    static ssize_t
+read_exact(int fd, void *buf, ssize_t len)
+{
+    ssize_t i = 0;
+    ssize_t got = 0;
+
+    do {
+        if ((i = read(fd, buf + got, len - got)) <= 0)
+            return(i);
+        got += i;
+    } while (got < len);
+
+    return len;
 }
 
     void
@@ -340,7 +398,8 @@ usage(EPCAP_STATE *ep)
             "              -u <user>        unprivileged user\n"
             "              -s <length>      packet capture length\n"
             "              -t <millisecond> capture timeout\n"
-            "              -v               verbose mode\n",
+            "              -v               verbose mode\n"
+            "              -X               enable sending packets\n",
             __progname
             );
 

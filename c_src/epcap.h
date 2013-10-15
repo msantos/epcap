@@ -36,10 +36,6 @@
 #include <err.h>
 #include <signal.h>
 #include <fcntl.h>
-
-#include <sys/select.h>
-
-#include <sys/time.h>
 #include <sys/resource.h>
 
 #include <pcap.h>
@@ -48,10 +44,7 @@
 #define PCAP_NETMASK_UNKNOWN    0xffffffff
 #endif
 
-#define EPCAP_VERSION   "0.03"
-
-#define MAXBUFLEN       4096    /* Largest message accepted on stdin */
-#define PKTLENHDR       2       /* 2 byte packet length header */
+#define EPCAP_VERSION   "0.4.0"
 
 #define SNAPLEN         65535
 #define PROMISC         1       /* true */
@@ -97,6 +90,7 @@ typedef struct {
     pcap_t *p;          /* pcap handle */
     int promisc;        /* promiscuous mode */
     int rfmon;          /* monitor mode */
+    int inject;         /* allow sending packets */
     int verbose;        /* debugging messages */
     int runasuser;      /* if setuid, run as the calling user */
     size_t snaplen;     /* packet capture length */
