@@ -33,16 +33,16 @@
 
 #include "epcap.h"
 
-int epcap_open(EPCAP_STATE *ep);
-int epcap_init(EPCAP_STATE *ep);
-void epcap_loop(EPCAP_STATE *ep);
-void epcap_ctrl(const char *ctrl_evt);
-void epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink);
-void epcap_send_free(ei_x_buff *msg);
-void epcap_send(EPCAP_STATE *ep);
-void gotsig(int sig);
-static ssize_t read_exact(int fd, void *buf, ssize_t len);
-void usage(EPCAP_STATE *ep);
+static int epcap_open(EPCAP_STATE *);
+static int epcap_init(EPCAP_STATE *);
+static void epcap_loop(EPCAP_STATE *);
+static void epcap_ctrl(const char *);
+static void epcap_response(struct pcap_pkthdr *, const u_char *, unsigned int);
+static void epcap_send_free(ei_x_buff *);
+static void epcap_send(EPCAP_STATE *);
+static void gotsig(int);
+static ssize_t read_exact(int, void *, ssize_t);
+static void usage(EPCAP_STATE *);
 
 int child_exited = 0;
 
@@ -156,10 +156,10 @@ CLEANUP:
 }
 
 
-    void
+    static void
 epcap_send(EPCAP_STATE *ep)
 {
-    int fd = STDIN_FILENO;
+    const int fd = STDIN_FILENO;
     ssize_t n = 0;
     unsigned char buf[SNAPLEN] = {0};
     u_int16_t len = 0;
@@ -210,7 +210,7 @@ epcap_send(EPCAP_STATE *ep)
 }
 
 
-    int
+    static int
 epcap_open(EPCAP_STATE *ep)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -234,11 +234,11 @@ epcap_open(EPCAP_STATE *ep)
 }
 
 
-    int
+    static int
 epcap_init(EPCAP_STATE *ep)
 {
-    struct bpf_program fcode;
-    char errbuf[PCAP_ERRBUF_SIZE];
+    struct bpf_program fcode = {0};
+    char errbuf[PCAP_ERRBUF_SIZE] = {0};
 
     u_int32_t ipaddr = 0;
     u_int32_t ipmask = 0;
@@ -266,7 +266,7 @@ epcap_init(EPCAP_STATE *ep)
 }
 
 
-    void
+    static void
 epcap_loop(EPCAP_STATE *ep)
 {
     pcap_t *p = ep->p;
@@ -298,7 +298,8 @@ epcap_loop(EPCAP_STATE *ep)
     }
 }
 
-void epcap_ctrl(const char *ctrl_evt)
+    static void
+epcap_ctrl(const char *ctrl_evt)
 {
     ei_x_buff msg;
 
@@ -310,7 +311,7 @@ void epcap_ctrl(const char *ctrl_evt)
     epcap_send_free(&msg);
 }
 
-    void
+    static void
 epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink)
 {
     ei_x_buff msg;
@@ -342,7 +343,7 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     epcap_send_free(&msg);
 }
 
-    void
+    static void
 epcap_send_free(ei_x_buff *msg)
 {
     u_int16_t len = 0;
@@ -372,7 +373,7 @@ read_exact(int fd, void *buf, ssize_t len)
     return len;
 }
 
-    void
+    static void
 gotsig(int sig)
 {
     switch (sig) {
@@ -384,7 +385,7 @@ gotsig(int sig)
     }
 }
 
-    void
+    static void
 usage(EPCAP_STATE *ep)
 {
     (void)fprintf(stderr, "%s, %s\n", __progname, EPCAP_VERSION);

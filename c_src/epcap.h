@@ -104,6 +104,6 @@ typedef struct {
 } EPCAP_STATE;
 
 
-int epcap_priv_drop(EPCAP_STATE *ep);
-void epcap_priv_issetuid(EPCAP_STATE *ep);
-int epcap_priv_rlimits(int nfd);
+int epcap_priv_drop(EPCAP_STATE *);
+void epcap_priv_issetuid(EPCAP_STATE *);
+int epcap_priv_rlimits(int);
