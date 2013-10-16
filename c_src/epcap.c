@@ -75,7 +75,7 @@ main(int argc, char *argv[])
                 break;
             case 'f':
                 IS_NULL(ep->file = strdup(optarg));
-                ep->runasuser = 1;
+                ep->opt |= EPCAP_OPT_RUNASUSER;
                 break;
             case 'g':
                 IS_NULL(ep->group = strdup(optarg));
@@ -84,10 +84,10 @@ main(int argc, char *argv[])
                 IS_NULL(ep->dev = strdup(optarg));
                 break;
             case 'M':
-                ep->rfmon = 1;
+                ep->opt |= EPCAP_OPT_RFMON;
                 break;
             case 'P':
-                ep->promisc = 1;
+                ep->opt |= EPCAP_OPT_PROMISC;
                 break;
             case 's':
                 ep->snaplen = (size_t)atoi(optarg);
@@ -102,7 +102,7 @@ main(int argc, char *argv[])
                 ep->verbose++;
                 break;
             case 'X':
-                ep->inject = 1;
+                ep->opt |= EPCAP_OPT_INJECT;
                 break;
             case 'h':
             default:
@@ -139,7 +139,7 @@ main(int argc, char *argv[])
                 (close(fd) < 0))
                 goto CLEANUP;
 
-            if (!ep->inject)
+            if (!(ep->opt & EPCAP_OPT_INJECT))
                 pcap_close(ep->p);
 
             if (epcap_priv_rlimits(0) < 0)
@@ -191,7 +191,7 @@ epcap_send(EPCAP_STATE *ep)
             return;
         }
 
-        if (ep->inject) {
+        if (ep->opt & EPCAP_OPT_INJECT) {
             n = pcap_inject(ep->p, buf, len);
 
             if (n < 0) {
@@ -221,12 +221,13 @@ epcap_open(EPCAP_STATE *ep)
         if (ep->dev == NULL)
             PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
 
-        PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen, ep->promisc, ep->timeout, errbuf));
+        PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen,
+                    ep->opt & EPCAP_OPT_PROMISC, ep->timeout, errbuf));
 
         /* monitor mode */
 #ifdef PCAP_ERROR_RFMON_NOTSUP
         if (pcap_can_set_rfmon(ep->p) == 1)
-            (void)pcap_set_rfmon(ep->p, ep->rfmon);
+            (void)pcap_set_rfmon(ep->p, ep->opt & EPCAP_OPT_RFMON);
 #endif
     }
 

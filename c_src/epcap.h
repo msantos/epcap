@@ -47,7 +47,6 @@
 #define EPCAP_VERSION   "0.4.0"
 
 #define SNAPLEN         65535
-#define PROMISC         1       /* true */
 
 /* On Linux, 0 will block until the next packet is received.
  * On BSD, 0 will block until the snaplen buffer is full.
@@ -82,17 +81,19 @@
     } \
 } while (0)
 
-
 extern char *__progname;
 
+enum {
+    EPCAP_OPT_PROMISC = 1 << 0,     /* enable promiscuous mode */
+    EPCAP_OPT_RUNASUSER = 1 << 1,   /* setuid: drop privs to calling user */
+    EPCAP_OPT_RFMON = 1 << 2,       /* enable monitor mode */
+    EPCAP_OPT_INJECT = 1 << 3,      /* enable packet injection */
+};
 
 typedef struct {
     pcap_t *p;          /* pcap handle */
-    int promisc;        /* promiscuous mode */
-    int rfmon;          /* monitor mode */
-    int inject;         /* allow sending packets */
-    int verbose;        /* debugging messages */
-    int runasuser;      /* if setuid, run as the calling user */
+    int opt;            /* options */
+    int verbose;        /* debug messages */
     size_t snaplen;     /* packet capture length */
     u_int32_t timeout;  /* capture timeout */
     char *filt;         /* packet filter */

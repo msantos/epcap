@@ -82,7 +82,7 @@ epcap_priv_drop(EPCAP_STATE *ep)
     void
 epcap_priv_issetuid(EPCAP_STATE *ep)
 {
-    if (ep->runasuser && (geteuid() == 0)) {
+    if ((ep->opt & EPCAP_OPT_RUNASUSER) && (geteuid() == 0)) {
         IS_LTZERO(setgid(getgid()));
         IS_LTZERO(setuid(getuid()));
     }
