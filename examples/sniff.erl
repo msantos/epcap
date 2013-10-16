@@ -54,7 +54,6 @@
 %%--------------------------------------------------------------------
 start() ->
     start([{filter, "tcp and port 80"},
-            {interface, "en1"},
             {chroot, "priv/tmp"}]).
 start(Opt) when is_list(Opt) ->
     gen_fsm:send_event(?MODULE, {start, Opt}).
