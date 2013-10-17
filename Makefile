@@ -1,4 +1,3 @@
-
 REBAR=$(shell which rebar || echo ./rebar)
 
 all: deps compile
@@ -20,6 +19,9 @@ clean: $(REBAR)
 
 deps: $(REBAR)
 	@$(REBAR) check-deps || $(REBAR) get-deps
+
+test: $(REBAR) compile
+	@$(REBAR) eunit suite=epcap
 
 examples: eg
 eg:
