@@ -36,10 +36,14 @@
 -include_lib("pkt/include/pkt.hrl").
 
 epcap_test_() ->
-    {ok, Ref} = epcap:start(epcap_dev() ++ [{filter, "tcp and port 29"}]),
+    {ok, Ref} = epcap:start(epcap_dev() ++ [
+            inject,
+            {filter, "tcp and ( port 29 or port 39 )"}
+        ]),
 
     {timeout, 480, [
-            {?LINE, fun() -> epcap_filter(Ref) end}
+            {?LINE, fun() -> epcap_filter(Ref) end},
+            {?LINE, fun() -> epcap_send(Ref) end}
         ]}.
 
 epcap_dev() ->
@@ -60,4 +64,42 @@ epcap_filter(_Ref) ->
                     {packet, Packet}
                 ]),
             [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
+    end.
+
+epcap_send(Ref) ->
+    {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+
+    Frame = receive
+        {packet, _DataLinkType, _Time, _Length, Packet} ->
+            [#ether{} = Ether, #ipv4{} = IP, #tcp{} = TCP, Payload] = pkt:decapsulate(Packet),
+            TCP1 = TCP#tcp{dport = 39, sport = 39},
+            Sum0 = pkt:makesum(IP#ipv4{sum = 0}),
+            Sum1 = pkt:makesum([IP, TCP1, Payload]),
+            list_to_binary([
+                    pkt:ether(Ether),
+                    pkt:ipv4(IP#ipv4{sum = Sum0}),
+                    pkt:tcp(TCP1#tcp{sum = Sum1}),
+                    Payload
+                ])
+    end,
+    error_logger:info_report([{frame, Frame}]),
+    ok = epcap:send(Ref, Frame),
+    epcap_send_1().
+
+epcap_send_1() ->
+    receive
+        {packet, DataLinkType, Time, Length, Packet} ->
+            case pkt:decapsulate(Packet) of
+                [#ether{}, #ipv4{}, #tcp{dport = 39}, _Payload] ->
+                    error_logger:info_report([
+                        {dlt, DataLinkType},
+                        {time, Time},
+                        {length, Length},
+                        {packet, Packet}
+                    ]),
+                    ok;
+                % TCP SYN retries
+                [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] ->
+                    epcap_send_1()
+            end
     end.
