@@ -72,7 +72,7 @@ epcap_send(Ref) ->
     Frame = receive
         {packet, _DataLinkType, _Time, _Length, Packet} ->
             [#ether{} = Ether, #ipv4{} = IP, #tcp{} = TCP, Payload] = pkt:decapsulate(Packet),
-            TCP1 = TCP#tcp{dport = 39, sport = 39},
+            TCP1 = TCP#tcp{dport = 39, sport = 39, sum = 0},
             Sum0 = pkt:makesum(IP#ipv4{sum = 0}),
             Sum1 = pkt:makesum([IP, TCP1, Payload]),
             list_to_binary([
