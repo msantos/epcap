@@ -84,7 +84,7 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %% State: sniffing
 %%
 handle_info({packet, DLT, Time, Len, Packet}, sniffing, State) ->
-    [Ether, IP, Hdr, Payload] = decode(pkt:link_type(DLT), Packet),
+    [Ether, IP, Hdr, Payload] = decode(pkt:dlt(DLT), Packet),
 
     {Saddr, Daddr, Proto} = case IP of
         #ipv4{saddr = S, daddr = D, p = P} ->
@@ -98,7 +98,7 @@ handle_info({packet, DLT, Time, Len, Packet}, sniffing, State) ->
             {time, timestamp(Time)},
             {caplen, byte_size(Packet)},
             {len, Len},
-            {datalink, pkt:link_type(DLT)},
+            {datalink, pkt:dlt(DLT)},
 
             % Source
             {source_macaddr, string:join(ether_addr(Ether#ether.shost), ":")},
