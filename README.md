@@ -15,22 +15,22 @@ epcap includes a small example program called sniff.
     cd epcap
     make
     make examples
-    
+
     # Allow your user to epcap with root privs
     sudo visudo
     youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
-    
+
     erl -pa ebin deps/*/ebin # or: ./start.sh
 
     % Start the sniffer process
     sniff:start_link().
-    
+
     % Use your interface, or leave it out and trust in pcap
     sniff:start([{interface, "eth0"}]).
-    
+
     % To change the filter
     sniff:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"}]).
-    
+
     % To stop sniffing
     sniff:stop().
 
@@ -39,7 +39,7 @@ epcap includes a small example program called sniff.
 
     epcap:start() -> {ok, pid()}
     epcap:start(Args) -> {ok, pid()}
-    
+
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
@@ -100,24 +100,24 @@ epcap includes a small example program called sniff.
 
 ## SCREENSHOT
 
-    =INFO REPORT==== 6-Jan-2010::20:35:18 ===
-        time: "2010-01-06 20:35:18"
-        caplen: 562
-        len: 562
-        source_macaddr: "0:16:B6:xx:xx:xx"
-        source_address: {207,97,227,239}
-        source_port: 80
-        destination_macaddr: "0:15:AF:xx:xx:xx"
-        destination_address: {192,168,1,2}
-        destination_port: 56934
-        protocol: tcp
-        protocol_header: [{flags,["ack","psh"]},
-                          {seq,2564452231},
-                          {ack,3156269309},
-                          {win,46}]
-        payload_bytes: 492
-        payload: "HTTP/1.1 301 Moved Permanently..Server: nginx/0.7.61..Date: Thu, 07 Jan 2010 01:35:17 GMT..Content-Type: text/html; charset=utf-8..Connection: close..Status: 301 Moved Permanently..Location: http://github.com/dashboard..X-Runtime: 2ms..Content-Length: 93..Set-Cookie: _github_ses=BAh7BiIKZmxhc2hJQzonQWN0aW9uQ29udHJvbGxlcjo6Rmxhc2g6OkZsYXNoSGFzaHsABjoKQHVzZWR7AA%3D%3D--884981fc5aa85daf318eeff084d98e2cff92578f; path=/; expires=Wed, 01 Jan 2020 08:00:00 GMT; HttpOnly..Cache-Control: no-cache"
-
+    =INFO REPORT==== 27-Oct-2013::11:47:43 ===
+        pcap: [{time,"2013-10-27 11:47:43"},
+               {caplen,653},
+               {len,653},
+               {datalink,en10mb}]
+        ether: [{source_macaddr,"F0:BD:4F:AA:BB:CC"},
+                {destination_macaddr,"B3:4B:19:00:11:22"}]
+        ipv6: [{protocol,tcp},
+               {source_address,"2607:F8B0:400B:80B::1000"},
+               {destination_address,"2002:26F:92:AE::123"}]
+        tcp: [{source_port,80},
+              {destination_port,47980},
+              {flags,[ack,psh]},
+              {seq,686139900},
+              {ack,725208397},
+              {win,224}]
+        payload_size: 567
+        payload: "HTTP/1.0 301 Moved Permanently..Location: http://www.google.ca/..Content-Type: text/html; charset=UTF-8..Date: Sun, 27 Oct 2013 15:47:49 GMT..Expires: Tue, 26 Nov 2013 15:47:49 GMT..Cache-Control: public, max-age=2592000..Server: gws..Content-Length: 218..X-XSS-Protection: 1; mode=block..X-Frame-Options: SAMEORIGIN..Alternate-Protocol: 80:quic....<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">.<TITLE>301 Moved</TITLE></HEAD><BODY>.<H1>301 Moved</H1>.The document has moved.<A HREF=\"http://www.google.ca/\">here</A>...</BODY></HTML>.." 
 
 ## TODO
 
