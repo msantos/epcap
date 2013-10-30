@@ -46,6 +46,7 @@
 
 -record(state, {
         pid,
+        crash = true,
         format = [] % full packet dump: binary, hex
         }).
 
@@ -85,7 +86,7 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %%
 handle_info({packet, DLT, Time, Len, Data}, sniffing,
     #state{format = Format} = State) ->
-    Packet = pkt:decapsulate({pkt:dlt(DLT), Data}),
+    Packet = decode(DLT, Data, State),
     Headers = header(Packet),
 
     error_logger:info_report([
@@ -120,10 +121,12 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%--------------------------------------------------------------------
 waiting({start, Opt}, State) ->
     Format = proplists:get_value(format, Opt, []),
+    Snaplen = proplists:get_value(snaplen, Opt),
     {ok, Pid} = epcap:start(Opt),
     {next_state, sniffing, State#state{
             pid = Pid,
-            format = Format
+            format = Format,
+            crash = Snaplen =:= undefined
         }}.
 
 sniffing({start, Opt}, #state{pid = Pid} = State) ->
@@ -138,6 +141,16 @@ sniffing(stop, #state{pid = Pid} = State) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+decode(DLT, Data, #state{crash = true}) ->
+    pkt:decapsulate({pkt:dlt(DLT), Data});
+decode(DLT, Data, #state{crash = false}) ->
+    case pkt:decode(pkt:dlt(DLT), Data) of
+        {ok, {Headers, Payload}} ->
+            Headers ++ [Payload];
+        {error, SoFar, _Failed} ->
+            SoFar
+    end.
+
 header(Payload) ->
     header(Payload, []).
 
