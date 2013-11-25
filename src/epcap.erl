@@ -36,6 +36,7 @@
 -export([start/0, start/1, start/2, stop/1]).
 -export([start_link/2]).
 -export([send/2]).
+-export([getopts/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -72,7 +73,7 @@ init([Pid, Options]) ->
         {unix, linux} -> 0;
         _ -> 500
     end,
-    Cmd = make_args(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
+    Cmd = getopts(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{pid = Pid, port = Port}}.
 
@@ -121,39 +122,40 @@ handle_info(Info, State) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-make_args(PL) ->
-    Sudo = case proplists:is_defined(file, PL) of
-        true -> "";
-        false -> "sudo "
-    end,
-    proplists:get_value(progname, PL, Sudo ++ pfring(PL) ++ cpu_affinity(PL) ++ progname()) ++ " " ++
-    string:join([get_switch(proplists:lookup(Arg, PL)) || Arg <- [
-            chroot,
-            group,
-            interface,
-            file,
-            monitor,
-            promiscuous,
-            inject,
-            user,
-            snaplen,
-            timeout,
-            verbose,
-            filter
-        ], proplists:lookup(Arg, PL) /= none], " ").
+getopts(Options) when is_list(Options) ->
+    Exec = exec(Options),
+    Progname = proplists:get_value(progname, Options, progname()),
+    Pfring = pfring(Options),
+    Cpu_affinity = cpu_affinity(Options),
+    Filter = proplists:get_value(filter, Options, ""),
 
-get_switch({chroot, Arg})       -> "-d " ++ Arg;
-get_switch({file, Arg})         -> "-f " ++ Arg;
-get_switch({group, Arg})        -> "-g " ++ Arg;
-get_switch({interface, Arg})    -> "-i " ++ Arg;
-get_switch({monitor, true})     -> "-M";
-get_switch({promiscuous, true}) -> "-P";
-get_switch({snaplen, Arg})      -> "-s " ++ integer_to_list(Arg);
-get_switch({timeout, Arg})      -> "-t " ++ integer_to_list(Arg);
-get_switch({user, Arg})         -> "-u " ++ Arg;
-get_switch({verbose, Arg})      -> string:copies("-v ", Arg);
-get_switch({inject, true})      -> "-X";
-get_switch({filter, Arg})       -> "\"" ++ Arg ++ "\"".
+    Switches0 = lists:foldl(fun(Opt, Switch) -> [optarg(Opt)|Switch] end,
+        "",
+        proplists:compact(Options)),
+    Switches = lists:reverse([quote(Filter)|Switches0]),
+
+    Cmd = [ N || N <- [Exec, Pfring, Cpu_affinity, Progname|Switches], N /= ""],
+
+    string:join(Cmd, " ").
+
+optarg({chroot, Arg})       -> switch("-d", Arg);
+optarg({file, Arg})         -> switch("-f", Arg);
+optarg({group, Arg})        -> switch("-g", Arg);
+optarg({interface, Arg})    -> switch("-i", Arg);
+optarg(monitor)             -> "-M";
+optarg(promiscuous)         -> "-P";
+optarg({snaplen, Arg})      -> switch("-s", Arg);
+optarg({timeout, Arg})      -> switch("-t", Arg);
+optarg({user, Arg})         -> switch("-u", Arg);
+optarg({verbose, Arg})      -> string:copies("-v ", Arg);
+optarg(inject)              -> "-X";
+optarg(_)                   -> "".
+
+switch(Switch, Arg) ->
+    lists:concat([Switch, " ", Arg]).
+
+quote(Str) ->
+    "\"" ++ Str ++ "\"".
 
 -spec basedir() -> string().
 basedir() ->
@@ -173,12 +175,20 @@ basedir() ->
 progname() ->
     filename:join([basedir(), ?MODULE]).
 
+-spec exec([proplists:property()]) -> string().
+exec(Options) ->
+    Exec = proplists:get_value(exec, Options, "sudo"),
+    case proplists:is_defined(file, Options) of
+        true -> "";
+        false -> Exec
+    end.
+
 -spec pfring([proplists:property()]) -> string().
 pfring(Options) ->
     case proplists:get_value(cluster_id, Options) of
         undefined -> "";
         Value ->
-            "PCAP_PF_RING_CLUSTER_ID=" ++ integer_to_list(Value) ++ " "
+            "PCAP_PF_RING_CLUSTER_ID=" ++ integer_to_list(Value)
     end.
 
 -spec cpu_affinity([proplists:property()]) -> string().
@@ -186,5 +196,5 @@ cpu_affinity(Options) ->
     case proplists:get_value(cpu_affinity, Options) of
         undefined -> "";
         CPUs ->
-            "taskset -c " ++ CPUs ++ " "
+            "taskset -c " ++ CPUs
     end.
