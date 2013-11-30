@@ -130,7 +130,7 @@ getopts(Options) when is_list(Options) ->
     Filter = proplists:get_value(filter, Options, ""),
 
     Switches0 = [ optarg(Opt) || Opt <- proplists:compact(Options) ],
-    Switches = lists:reverse([quote(Filter)|Switches0]),
+    Switches = Switches0 ++ [quote(Filter)],
 
     Cmd = [ N || N <- [Exec, Pfring, Cpu_affinity, Progname|Switches], N /= ""],
 
