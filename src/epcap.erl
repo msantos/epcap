@@ -129,9 +129,7 @@ getopts(Options) when is_list(Options) ->
     Cpu_affinity = cpu_affinity(Options),
     Filter = proplists:get_value(filter, Options, ""),
 
-    Switches0 = lists:foldl(fun(Opt, Switch) -> [optarg(Opt)|Switch] end,
-        "",
-        proplists:compact(Options)),
+    Switches0 = [ optarg(Opt) || Opt <- proplists:compact(Options) ],
     Switches = lists:reverse([quote(Filter)|Switches0]),
 
     Cmd = [ N || N <- [Exec, Pfring, Cpu_affinity, Progname|Switches], N /= ""],
@@ -154,6 +152,8 @@ optarg(_)                   -> "".
 switch(Switch, Arg) ->
     lists:concat([Switch, " ", Arg]).
 
+quote("") ->
+    "";
 quote(Str) ->
     "\"" ++ Str ++ "\"".
 
