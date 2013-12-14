@@ -50,7 +50,7 @@ epcap_priv_drop(EPCAP_STATE *ep)
 
 
     if (geteuid() != 0)
-        return (1);
+        return 1;
 
     SETVAR(ep->user, EPCAP_USER);
     SETVAR(ep->group, EPCAP_GROUP);
@@ -58,24 +58,24 @@ epcap_priv_drop(EPCAP_STATE *ep)
 
     if ( (pw = getpwnam(ep->user)) == NULL) {
         warnx("user does not exist: %s", ep->user);
-        return (-1);
+        return -1;
     }
 
     if ( (gr = getgrnam(ep->group)) == NULL) {
         warnx("group does not exist: %s", ep->group);
-        return (-1);
+        return -1;
     }
 
     if (chroot(ep->chroot) < 0) {
         warn("%s", ep->chroot);
-        return (-1);
+        return -1;
     }
 
     IS_LTZERO(chdir("/"));
     IS_LTZERO(setgid(gr->gr_gid));
     IS_LTZERO(setuid(pw->pw_uid));
 
-    return (0);
+    return 0;
 }
 
 
