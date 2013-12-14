@@ -35,11 +35,7 @@
 #include "epcap.h"
 
 #define EPCAP_USER      "nobody"
-#define EPCAP_GROUP     "nogroup"
-
 #define EPCAP_CHROOT    "/var/empty"
-
-#define SETVAR(x, y)    ((x) = ((x) == NULL ? (y) : (x)))
 
 
     int
@@ -48,20 +44,21 @@ epcap_priv_drop(EPCAP_STATE *ep)
     struct passwd *pw = NULL;
     struct group *gr = NULL;
 
-
     if (geteuid() != 0)
         return 1;
 
-    SETVAR(ep->user, EPCAP_USER);
-    SETVAR(ep->group, EPCAP_GROUP);
-    SETVAR(ep->chroot, EPCAP_CHROOT);
+    if (!ep->user)
+        ep->user = EPCAP_USER;
+
+    if (!ep->chroot)
+        ep->chroot = EPCAP_CHROOT;
 
     if ( (pw = getpwnam(ep->user)) == NULL) {
         warnx("user does not exist: %s", ep->user);
         return -1;
     }
 
-    if ( (gr = getgrnam(ep->group)) == NULL) {
+    if (ep->group && (gr = getgrnam(ep->group)) == NULL) {
         warnx("group does not exist: %s", ep->group);
         return -1;
     }
@@ -72,7 +69,7 @@ epcap_priv_drop(EPCAP_STATE *ep)
     }
 
     IS_LTZERO(chdir("/"));
-    IS_LTZERO(setgid(gr->gr_gid));
+    IS_LTZERO(setgid(ep->group ? gr->gr_gid : pw->pw_gid));
     IS_LTZERO(setuid(pw->pw_uid));
 
     return 0;
