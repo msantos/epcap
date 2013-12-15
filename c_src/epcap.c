@@ -231,7 +231,7 @@ epcap_open(EPCAP_STATE *ep)
 #endif
     }
 
-    return (0);
+    return 0;
 }
 
 
@@ -254,15 +254,15 @@ epcap_init(EPCAP_STATE *ep)
 
     if (pcap_compile(ep->p, &fcode, ep->filt, 1 /* optimize == true */, ipmask) != 0) {
         VERBOSE(1, "pcap_compile: %s", pcap_geterr(ep->p));
-        return (-1);
+        return -1;
     }
 
     if (pcap_setfilter(ep->p, &fcode) != 0) {
         VERBOSE(1, "pcap_setfilter: %s", pcap_geterr(ep->p));
-        return (-1);
+        return -1;
     }
 
-    return (0);
+    return 0;
 
 }
 
@@ -367,7 +367,7 @@ read_exact(int fd, void *buf, ssize_t len)
 
     do {
         if ((i = read(fd, buf + got, len - got)) <= 0)
-            return(i);
+            return i;
         got += i;
     } while (got < len);
 
