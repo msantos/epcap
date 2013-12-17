@@ -34,10 +34,6 @@
 
 #include "epcap.h"
 
-#define EPCAP_USER      "nobody"
-#define EPCAP_CHROOT    "/var/empty"
-
-
     int
 epcap_priv_drop(EPCAP_STATE *ep)
 {

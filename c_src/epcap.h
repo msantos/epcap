@@ -53,6 +53,8 @@
  */
 #define TIMEOUT         500     /* ms, 0 = block indefinitely */
 
+#define EPCAP_USER      "nobody"
+#define EPCAP_CHROOT    "/var/empty"
 #define EPCAP_FILTER    "tcp and port 80"
 
 #define PCAP_ERRBUF(x) do { \
