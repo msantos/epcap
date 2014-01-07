@@ -94,6 +94,7 @@ enum {
 
 typedef struct {
     pcap_t *p;          /* pcap handle */
+    int datalink;       /* dlt */
     int opt;            /* options */
     int verbose;        /* debug messages */
     size_t snaplen;     /* packet capture length */

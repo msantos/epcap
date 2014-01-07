@@ -37,7 +37,7 @@ static int epcap_open(EPCAP_STATE *);
 static int epcap_init(EPCAP_STATE *);
 static void epcap_loop(EPCAP_STATE *);
 static void epcap_ctrl(const char *);
-static void epcap_response(struct pcap_pkthdr *, const u_char *, unsigned int);
+void epcap_response(u_char *, const struct pcap_pkthdr *, const u_char *);
 static void epcap_send_free(ei_x_buff *);
 static void epcap_send(EPCAP_STATE *);
 static void gotsig(int);
@@ -231,6 +231,8 @@ epcap_open(EPCAP_STATE *ep)
 #endif
     }
 
+    ep->datalink = pcap_datalink(ep->p);
+
     return 0;
 }
 
@@ -270,32 +272,20 @@ epcap_init(EPCAP_STATE *ep)
     static void
 epcap_loop(EPCAP_STATE *ep)
 {
-    pcap_t *p = ep->p;
-    struct pcap_pkthdr *hdr = NULL;
-    const u_char *pkt = NULL;
+    int rv = -1;
 
-    int read_packet = 1;
-    int datalink = pcap_datalink(p);
+    rv = pcap_loop(ep->p, -1, epcap_response, (u_char *)ep);
 
-    while (read_packet) {
-        switch (pcap_next_ex(p, &hdr, &pkt)) {
-            case 0:     /* timeout */
-                VERBOSE(1, "timeout reading packet");
-                break;
-            case 1:     /* got packet */
-                epcap_response(hdr, pkt, datalink);
-                break;
-            case -2:    /* eof */
-                VERBOSE(1, "end of file");
+    switch (rv) {
+        case -2:
+            break;
+        case -1:    /* error reading packet */
+            VERBOSE(1, "%s", pcap_geterr(ep->p));
+            break;
+        default:
+            if (ep->file)
                 epcap_ctrl("eof");
-                read_packet = 0;
-                break;
-            case -1:    /* error reading packet */
-                VERBOSE(1, "%s", pcap_geterr(p));
-                /* fall through */
-            default:
-                read_packet = 0;
-        }
+            break;
     }
 }
 
@@ -312,11 +302,11 @@ epcap_ctrl(const char *ctrl_evt)
     epcap_send_free(&msg);
 }
 
-    static void
-epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink)
+    void
+epcap_response(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt)
 {
-    ei_x_buff msg;
-
+    EPCAP_STATE *ep = (EPCAP_STATE *)user;
+    ei_x_buff msg = {0};
 
     IS_FALSE(ei_x_new_with_version(&msg));
 
@@ -325,7 +315,7 @@ epcap_response(struct pcap_pkthdr *hdr, const u_char *pkt, unsigned int datalink
     IS_FALSE(ei_x_encode_atom(&msg, "packet"));
 
     /* DataLinkType */
-    IS_FALSE(ei_x_encode_long(&msg, datalink));
+    IS_FALSE(ei_x_encode_long(&msg, ep->datalink));
 
     /* {MegaSec, Sec, MicroSec} */
     IS_FALSE(ei_x_encode_tuple_header(&msg, 3));
