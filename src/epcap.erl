@@ -136,21 +136,24 @@ getopts(Options) when is_list(Options) ->
 
     string:join(Cmd, " ").
 
-optarg({chroot, Arg})       -> switch("-d", Arg);
-optarg({file, Arg})         -> switch("-f", Arg);
-optarg({group, Arg})        -> switch("-g", Arg);
-optarg({interface, Arg})    -> switch("-i", Arg);
-optarg(monitor)             -> "-M";
-optarg(promiscuous)         -> "-P";
-optarg({snaplen, Arg})      -> switch("-s", Arg);
-optarg({timeout, Arg})      -> switch("-t", Arg);
-optarg({user, Arg})         -> switch("-u", Arg);
-optarg({verbose, Arg})      -> string:copies("-v ", Arg);
-optarg(inject)              -> "-X";
+optarg({chroot, Arg})       -> switch("d", Arg);
+optarg({file, Arg})         -> switch("f", Arg);
+optarg({group, Arg})        -> switch("g", Arg);
+optarg({interface, Arg})    -> switch("i", Arg);
+optarg(monitor)             -> switch("M");
+optarg(promiscuous)         -> switch("P");
+optarg({snaplen, Arg})      -> switch("s", Arg);
+optarg({timeout, Arg})      -> switch("t", Arg);
+optarg({user, Arg})         -> switch("u", Arg);
+optarg({verbose, Arg})      -> switch(string:copies("v", Arg));
+optarg(inject)              -> switch("X");
 optarg(_)                   -> "".
 
+switch(Switch) ->
+    lists:concat(["-", Switch]).
+
 switch(Switch, Arg) ->
-    lists:concat([Switch, " ", Arg]).
+    lists:concat(["-", Switch, " ", Arg]).
 
 quote("") ->
     "";
