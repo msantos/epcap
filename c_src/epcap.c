@@ -46,6 +46,8 @@ static void usage(EPCAP_STATE *);
 
 int child_exited = 0;
 
+extern char **environ;
+
 /* On some platforms (Linux), poll() (used by pcap)
  * will return EINVAL if RLIMIT_NOFILES < numfd */
 #ifndef EPCAP_RLIMIT_NOFILES
@@ -68,10 +70,20 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "d:f:g:hi:MPs:t:u:vX")) != -1) {
+    while ( (ch = getopt(argc, argv, "d:e:f:g:hi:MPs:t:u:vX")) != -1) {
         switch (ch) {
             case 'd':   /* chroot directory */
                 IS_NULL(ep->chroot = strdup(optarg));
+                break;
+            case 'e': {
+                char *name = NULL;
+                char *value = NULL;
+                IS_NULL(name = strdup(optarg));
+                IS_NULL(value = strchr(name, '='));
+                *value = '\0'; value++;
+                IS_FALSE(setenv(name, value, 0));
+                free(name);
+                }
                 break;
             case 'f':
                 IS_NULL(ep->file = strdup(optarg));
@@ -114,6 +126,11 @@ main(int argc, char *argv[])
     argv += optind;
 
     IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
+
+    if (ep->verbose > 0) {
+        for ( ; *environ; environ++)
+            VERBOSE(2, "env:%s\n", *environ);
+    }
 
     IS_LTZERO(fd = open("/dev/null", O_RDWR));
 
@@ -393,6 +410,7 @@ usage(EPCAP_STATE *ep)
             "              -u <user>        unprivileged user\n"
             "              -s <length>      packet capture length\n"
             "              -t <millisecond> capture timeout\n"
+            "              -e <key>=<val>   set an environment variable\n"
             "              -v               verbose mode\n"
             "              -X               enable sending packets\n",
             __progname

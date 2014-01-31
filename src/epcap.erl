@@ -125,18 +125,18 @@ handle_info(Info, State) ->
 getopts(Options) when is_list(Options) ->
     Exec = exec(Options),
     Progname = proplists:get_value(progname, Options, progname()),
-    Pfring = pfring(Options),
     Cpu_affinity = cpu_affinity(Options),
     Filter = proplists:get_value(filter, Options, ""),
 
     Switches0 = [ optarg(Opt) || Opt <- proplists:compact(Options) ],
     Switches = Switches0 ++ [quote(Filter)],
 
-    Cmd = [ N || N <- [Exec, Pfring, Cpu_affinity, Progname|Switches], N /= ""],
+    Cmd = [ N || N <- [Exec, Cpu_affinity, Progname|Switches], N /= ""],
 
     string:join(Cmd, " ").
 
 optarg({chroot, Arg})       -> switch("d", Arg);
+optarg({cluster_id, Arg})   -> switch("e", env("PCAP_PF_RING_CLUSTER_ID", Arg));
 optarg({file, Arg})         -> switch("f", Arg);
 optarg({group, Arg})        -> switch("g", Arg);
 optarg({interface, Arg})    -> switch("i", Arg);
@@ -155,6 +155,11 @@ switch(Switch) ->
 
 switch(Switch, Arg) ->
     lists:concat(["-", Switch, " ", Arg]).
+
+env(Key, Val) when is_integer(Val) ->
+    env(Key, integer_to_list(Val));
+env(Key, Val) ->
+    lists:concat([Key, "=", Val]).
 
 quote("") ->
     "";
@@ -185,14 +190,6 @@ exec(Options) ->
     case proplists:is_defined(file, Options) of
         true -> "";
         false -> Exec
-    end.
-
--spec pfring([proplists:property()]) -> string().
-pfring(Options) ->
-    case proplists:get_value(cluster_id, Options) of
-        undefined -> "";
-        Value ->
-            "PCAP_PF_RING_CLUSTER_ID=" ++ integer_to_list(Value)
     end.
 
 -spec cpu_affinity([proplists:property()]) -> string().
