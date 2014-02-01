@@ -156,8 +156,6 @@ switch(Switch) ->
 switch(Switch, Arg) ->
     lists:concat(["-", Switch, " ", Arg]).
 
-env(Key, Val) when is_integer(Val) ->
-    env(Key, integer_to_list(Val));
 env(Key, Val) ->
     lists:concat([Key, "=", Val]).
 
