@@ -19,6 +19,9 @@ epcap includes a small example program called sniff.
     # Allow your user to epcap with root privs
     sudo visudo
     youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
+    # And if requiretty is enabled, disable it by using one of these
+    Defaults!/path/to/epcap/priv/epcap !requiretty
+    Defaults:youruser !requiretty
 
     erl -pa ebin deps/*/ebin # or: ./start.sh
 
