@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/resource.h>
+#include <netinet/in.h>
 
 #include <pcap.h>
 
