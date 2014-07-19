@@ -1,4 +1,4 @@
-case os:getenv("PFRING") of
+PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
     false ->
         CONFIG;
     Value ->
@@ -14,4 +14,35 @@ case os:getenv("PFRING") of
                 end;
             _ -> CONFIG
         end
-end.
+    end
+end,
+Pcap_create = fun(CONFIG) ->
+    Check = "
+#include <pcap/pcap.h>
+int main(int argc, char *argv[])
+{
+    char errbuf[PCAP_ERRBUF_SIZE];
+    (void)pcap_create(NULL, errbuf);
+    return 0;
+}",
+    file:write_file("test/test_pcap_create.c", Check),
+    Retval = os:cmd("gcc -o /dev/null test/test_pcap_create.c -lpcap > /dev/null 2>&1; printf \"%d\" $?"),
+    file:delete("test/test_pcap_create.c"),
+    case Retval of
+        "0" ->
+            Env = case os:getenv("EPCAP_CFLAGS") of
+            false -> "";
+            N -> N
+            end,
+            os:putenv("EPCAP_CFLAGS", Env ++ " -DHAVE_PCAP_CREATE"),
+            CONFIG;
+        _ ->
+            CONFIG
+    end
+end,
+lists:foldl(fun(Fun, Cfg) ->
+        Fun(Cfg)
+    end,
+    CONFIG,
+    [PFRING, Pcap_create]
+    ).
