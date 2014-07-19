@@ -70,8 +70,11 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "d:e:f:g:hi:MPs:t:u:vX")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:t:u:vX")) != -1) {
         switch (ch) {
+            case 'b':
+                ep->bufsz = atoi(optarg);
+                break;
             case 'd':   /* chroot directory */
                 IS_NULL(ep->chroot = strdup(optarg));
                 break;
@@ -238,8 +241,30 @@ epcap_open(EPCAP_STATE *ep)
         if (ep->dev == NULL)
             PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
 
+#ifdef HAVE_PCAP_CREATE
+        PCAP_ERRBUF(ep->p = pcap_create(ep->dev, errbuf));
+        (void)pcap_set_snaplen(ep->p, ep->snaplen);
+        (void)pcap_set_promisc(ep->p, ep->opt & EPCAP_OPT_PROMISC);
+        (void)pcap_set_timeout(ep->p, ep->timeout);
+        if (ep->bufsz > 0)
+            (void)pcap_set_buffer_size(ep->p, ep->bufsz);
+        switch (pcap_activate(ep->p) != 0) {
+            case 0:
+                break;
+            case PCAP_WARNING:
+            case PCAP_ERROR:
+            case PCAP_WARNING_PROMISC_NOTSUP:
+            case PCAP_ERROR_NO_SUCH_DEVICE:
+            case PCAP_ERROR_PERM_DENIED:
+                pcap_perror(ep->p, "pcap_activate: ");
+                exit(EXIT_FAILURE);
+            default:
+                exit(EXIT_FAILURE);
+        }
+#else
         PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen,
                     ep->opt & EPCAP_OPT_PROMISC, ep->timeout, errbuf));
+#endif
 
         /* monitor mode */
 #ifdef PCAP_ERROR_RFMON_NOTSUP
@@ -408,6 +433,9 @@ usage(EPCAP_STATE *ep)
             "              -P               promiscuous mode\n"
             "              -g <group>       unprivileged group\n"
             "              -u <user>        unprivileged user\n"
+#ifdef HAVE_PCAP_CREATE
+            "              -b <size>        PCAP buf size\n"
+#endif
             "              -s <length>      packet capture length\n"
             "              -t <millisecond> capture timeout\n"
             "              -e <key>=<val>   set an environment variable\n"

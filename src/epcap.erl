@@ -135,6 +135,7 @@ getopts(Options) when is_list(Options) ->
 
     string:join(Cmd, " ").
 
+optarg({buffer, Arg})       -> switch("b", Arg);
 optarg({chroot, Arg})       -> switch("d", Arg);
 optarg({cluster_id, Arg})   -> switch("e", env("PCAP_PF_RING_CLUSTER_ID", Arg));
 optarg({file, Arg})         -> switch("f", Arg);

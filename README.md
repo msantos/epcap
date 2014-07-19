@@ -47,7 +47,7 @@ epcap includes a small example program called sniff.
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
                             {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
-                            {inject, boolean()}
+                            {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()}
 
         Packets are delivered as messages:
 
@@ -65,6 +65,13 @@ epcap includes a small example program called sniff.
         captured packet length, use byte_size(Packet).
 
         The Packet is a binary holding the captured data.
+
+        If the version of the pcap library supports it, the pcap buffer
+        size can be set to avoid dropped packets by using the 'buffer'
+        option. The buffer size must be larger than the snapshot
+        length (default: 65535) plus some overhead for the pcap data
+        structures. Using some multiple of the snapshot length is
+        suggested.
 
     epcap:send(Ref, Packet) -> ok
 
@@ -126,6 +133,7 @@ epcap includes a small example program called sniff.
 
 * return error atoms/tuples instead of using errx
 
+* add support for retrieving packet statistics using pcap\_stats(3PCAP)
 
 ## CONTRIBUTORS
 

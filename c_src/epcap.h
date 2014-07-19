@@ -100,6 +100,7 @@ typedef struct {
     int verbose;        /* debug messages */
     size_t snaplen;     /* packet capture length */
     u_int32_t timeout;  /* capture timeout */
+    int bufsz;          /* pcap buf size */
     char *filt;         /* packet filter */
     char *dev;          /* device to snoop */
     char *user;         /* run as unprivileged user */
