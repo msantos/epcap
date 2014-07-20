@@ -25,9 +25,9 @@ int main(int argc, char *argv[])
     (void)pcap_create(NULL, errbuf);
     return 0;
 }",
-    file:write_file("test/test_pcap_create.c", Check),
-    Retval = os:cmd("gcc -o /dev/null test/test_pcap_create.c -lpcap > /dev/null 2>&1; printf \"%d\" $?"),
-    file:delete("test/test_pcap_create.c"),
+    ok = file:write_file("test_pcap_create.c", Check),
+    Retval = os:cmd("cc -o /dev/null test_pcap_create.c -lpcap > /dev/null 2>&1; printf \"%d\" $?"),
+    file:delete("test_pcap_create.c"),
     case Retval of
         "0" ->
             Env = case os:getenv("EPCAP_CFLAGS") of
