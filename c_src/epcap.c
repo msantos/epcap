@@ -248,7 +248,7 @@ epcap_open(EPCAP_STATE *ep)
         (void)pcap_set_timeout(ep->p, ep->timeout);
         if (ep->bufsz > 0)
             (void)pcap_set_buffer_size(ep->p, ep->bufsz);
-        switch (pcap_activate(ep->p) != 0) {
+        switch (pcap_activate(ep->p)) {
             case 0:
                 break;
             case PCAP_WARNING:
