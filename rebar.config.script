@@ -18,7 +18,7 @@ PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
 end,
 Pcap_create = fun(CONFIG) ->
     Check = "
-#include <pcap/pcap.h>
+#include <pcap.h>
 int main(int argc, char *argv[])
 {
     char errbuf[PCAP_ERRBUF_SIZE];
