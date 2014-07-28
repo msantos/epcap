@@ -380,12 +380,17 @@ epcap_response(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt)
 epcap_send_free(ei_x_buff *msg)
 {
     u_int16_t len = 0;
+    struct iovec iov[2];
 
     len = htons(msg->index);
-    if (write(STDOUT_FILENO, &len, sizeof(len)) != sizeof(len))
-        errx(EXIT_FAILURE, "write header failed");
 
-    if (write(STDOUT_FILENO, msg->buff, msg->index) != msg->index)
+    iov[0].iov_base = &len;
+    iov[0].iov_len = sizeof(len);
+    iov[1].iov_base = msg->buff;
+    iov[1].iov_len = msg->index;
+
+    if (writev(STDOUT_FILENO, iov, sizeof(iov)/sizeof(iov[0])) !=
+            sizeof(len) + msg->index)
         errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
 
     ei_x_free(msg);

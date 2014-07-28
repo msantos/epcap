@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/uio.h>
 #include <err.h>
 #include <signal.h>
 #include <fcntl.h>
