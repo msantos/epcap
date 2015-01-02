@@ -129,6 +129,11 @@ epcap includes a small example program called sniff.
         payload_size: 567
         payload: "HTTP/1.0 301 Moved Permanently..Location: http://www.google.ca/..Content-Type: text/html; charset=UTF-8..Date: Sun, 27 Oct 2013 15:47:49 GMT..Expires: Tue, 26 Nov 2013 15:47:49 GMT..Cache-Control: public, max-age=2592000..Server: gws..Content-Length: 218..X-XSS-Protection: 1; mode=block..X-Frame-Options: SAMEORIGIN..Alternate-Protocol: 80:quic....<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">.<TITLE>301 Moved</TITLE></HEAD><BODY>.<H1>301 Moved</H1>.The document has moved.<A HREF=\"http://www.google.ca/\">here</A>...</BODY></HTML>.." 
 
+And a screenshot of the number of packets epcap is processing on a
+production system:
+
+![IPTraf Screenshot](https://cloud.githubusercontent.com/assets/13721/4917083/8fe7754c-64e0-11e4-9165-17e21c57ee06.png)
+
 ## TODO
 
 * return error atoms/tuples instead of using errx
