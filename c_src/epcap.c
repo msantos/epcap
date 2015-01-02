@@ -384,7 +384,7 @@ epcap_send_free(ei_x_buff *msg)
 
     len = htons(msg->index);
 
-    iov[0].iov_base = &len;
+    iov[0].iov_base = (void *)&len;
     iov[0].iov_len = sizeof(len);
     iov[1].iov_base = msg->buff;
     iov[1].iov_len = msg->index;
