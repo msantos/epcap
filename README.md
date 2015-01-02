@@ -23,7 +23,7 @@ epcap includes a small example program called sniff.
     Defaults!/path/to/epcap/priv/epcap !requiretty
     Defaults:youruser !requiretty
 
-    erl -pa ebin deps/*/ebin # or: ./start.sh
+    erl -pa ebin deps/*/ebin # or: rebar shell
 
     % Start the sniffer process
     sniff:start_link().
@@ -134,22 +134,3 @@ epcap includes a small example program called sniff.
 * return error atoms/tuples instead of using errx
 
 * add support for retrieving packet statistics using pcap\_stats(3PCAP)
-
-## CONTRIBUTORS
-
-* Olivier Girondel:
-    * preliminary IPv6 support
-
-* Harald Welte:
-    * support reading packets from pcap file
-    * SCTP support
-    * datalink types
-
-* Gregory Haskins:
-    * application file fix
-
-* Alexey Larin
-    * support of devices without ipwq
-
-* Artem Teslenko
-    * allow listening on different interfaces
