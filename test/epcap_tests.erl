@@ -36,9 +36,12 @@
 -include_lib("pkt/include/pkt.hrl").
 
 epcap_test_() ->
+    % Solaris pcap using DLPI requires the interface to be in promiscuous
+    % mode for outgoing packets to be captured
     {ok, Ref} = epcap:start(epcap_dev() ++ [
             inject,
-            {filter, "tcp and ( port 29 or port 39 )"}
+            {filter, "tcp and ( port 29 or port 39 )"},
+            promiscuous
         ]),
 
     {timeout, 480, [
