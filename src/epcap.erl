@@ -62,18 +62,15 @@ stop(Pid) ->
 
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
-    Chroot = case proplists:get_value(chroot, Options) of
-        undefined ->
-            filename:join([basedir(), "tmp"]);
-        Value ->
-            Value
-    end,
-    ok = filelib:ensure_dir(filename:join(Chroot, "dummy")),
-    Timeout = case os:type() of
-        {unix, linux} -> 0;
-        _ -> 500
-    end,
-    Cmd = getopts(Options ++ [{chroot, Chroot}, {timeout, Timeout}]),
+    Options1 = setopts([
+            {chroot, filename:join([basedir(), "tmp"])},
+            {timeout, timeout()}
+        ], Options),
+    ok = filelib:ensure_dir(filename:join(proplists:get_value(
+                chroot,
+                Options1
+            ), ".")),
+    Cmd = string:join(getopts(Options1), " "),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
     {ok, #state{pid = Pid, port = Port}}.
 
@@ -122,18 +119,26 @@ handle_info(Info, State) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+setopts([], Options) ->
+    proplists:compact(Options);
+setopts([{Key,Val}|Rest], Options) ->
+    case proplists:get_value(Key, Options) of
+        undefined ->
+            setopts(Rest, [{Key,Val}|Options]);
+        _ ->
+            setopts(Rest, Options)
+    end.
+
 getopts(Options) when is_list(Options) ->
     Exec = exec(Options),
     Progname = proplists:get_value(progname, Options, progname()),
     Cpu_affinity = cpu_affinity(Options),
     Filter = proplists:get_value(filter, Options, ""),
 
-    Switches0 = [ optarg(Opt) || Opt <- proplists:compact(Options) ],
+    Switches0 = [ optarg(Opt) || Opt <- Options ],
     Switches = Switches0 ++ [quote(Filter)],
 
-    Cmd = [ N || N <- [Exec, Cpu_affinity, Progname|Switches], N /= ""],
-
-    string:join(Cmd, " ").
+    [ N || N <- [Exec, Cpu_affinity, Progname|Switches], N /= ""].
 
 optarg({buffer, Arg})       -> switch("b", Arg);
 optarg({chroot, Arg})       -> switch("d", Arg);
@@ -197,4 +202,10 @@ cpu_affinity(Options) ->
         undefined -> "";
         CPUs ->
             "taskset -c " ++ CPUs
+    end.
+
+timeout() ->
+    case os:type() of
+        {unix, linux} -> 0;
+        _ -> 500
     end.
