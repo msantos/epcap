@@ -54,8 +54,13 @@ start(Pid, Options) when is_pid(Pid), is_list(Options) ->
 start_link(Pid, Options) ->
     gen_server:start_link(?MODULE, [Pid, Options], []).
 
-send(Pid, Packet) when is_pid(Pid), is_binary(Packet), byte_size(Packet) < 16#ffff ->
-    gen_server:call(Pid, {send, Packet}, infinity).
+send(Pid, Packet) when is_pid(Pid) ->
+    case iolist_size(Packet) < 16#ffff of
+        true ->
+            gen_server:call(Pid, {send, Packet}, infinity);
+        false ->
+            erlang:error(badarg)
+    end.
 
 stop(Pid) ->
     gen_server:call(Pid, stop).
