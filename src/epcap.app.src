@@ -1,6 +1,6 @@
 {application, epcap, [
     {description, "libpcap port"},
-    {vsn, "0.7.8"},
+    {vsn, "0.7.9"},
     {registered, []},
     {applications, [
         kernel,

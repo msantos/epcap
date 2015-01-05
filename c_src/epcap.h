@@ -64,7 +64,7 @@
 
 #define EPCAP_USER      "nobody"
 #define EPCAP_CHROOT    "/var/empty"
-#define EPCAP_FILTER    "tcp and port 80"
+#define EPCAP_FILTER    ""      /* match any packet */
 
 #define PCAP_ERRBUF(x) do { \
     if ((x) == NULL) \
