@@ -33,8 +33,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start/0, start/1, start/2, stop/1]).
--export([start_link/2]).
+-export([start_link/0, start_link/1, start_link/2, stop/1]).
+-export([start/0, start/1, start/2]).
 -export([send/2]).
 -export([getopts/1]).
 
@@ -45,12 +45,16 @@
 -record(state, {pid :: pid(), port :: port()}).
 
 start() ->
-    start_link(self(), []).
+    start(self(), []).
 start(Options) ->
-    start_link(self(), Options).
+    start(self(), Options).
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
-    start_link(Pid, Options).
+    gen_server:start(?MODULE, [Pid, Options], []).
 
+start_link() ->
+    start_link(self(), []).
+start_link(Options) ->
+    start_link(self(), Options).
 start_link(Pid, Options) ->
     gen_server:start_link(?MODULE, [Pid, Options], []).
 

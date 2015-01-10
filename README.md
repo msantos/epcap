@@ -42,6 +42,8 @@ epcap includes a small example program called sniff.
 
     epcap:start() -> {ok, pid()}
     epcap:start(Args) -> {ok, pid()}
+    epcap:start_link() -> {ok, pid()}
+    epcap:start_link(Args) -> {ok, pid()}
 
         Types   Args = [Options]
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
@@ -79,7 +81,7 @@ epcap includes a small example program called sniff.
                 Packet = binary()
 
         Inject a packet on the network interface. To enable sending
-        packets, start/1 must be called with the {inject, true} option
+        packets, start_link/1 must be called with the {inject, true} option
         (default: {inject, false}). When disabled, any data sent
         to the epcap port is silently discarded.
 
@@ -101,11 +103,11 @@ epcap includes a small example program called sniff.
         To complete the configuration you need to set up the cluster_id option.
         The value of the cluster_id option is integer and should be in range between 0 and 255.
 
-            epcap:start([{interface, "lo"}, {cluster_id, 2}]).
+            epcap:start_link([{interface, "lo"}, {cluster_id, 2}]).
 
         You can also specify the option cpu_affinity to set up CPU affinity for epcap port:
 
-            epcap:start([{interface, "lo"}, {cluster_id, 2}, {cpu_affinity, "1,3,5-7"}]).
+            epcap:start_link([{interface, "lo"}, {cluster_id, 2}, {cpu_affinity, "1,3,5-7"}]).
 
 
 ## SCREENSHOT

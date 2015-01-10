@@ -122,7 +122,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 waiting({start, Opt}, State) ->
     Format = proplists:get_value(format, Opt, []),
     Snaplen = proplists:get_value(snaplen, Opt),
-    {ok, Pid} = epcap:start(Opt),
+    {ok, Pid} = epcap:start_link(Opt),
     {next_state, sniffing, State#state{
             pid = Pid,
             format = Format,
@@ -131,7 +131,7 @@ waiting({start, Opt}, State) ->
 
 sniffing({start, Opt}, #state{pid = Pid} = State) ->
     epcap:stop(Pid),
-    {ok, Pid1} = epcap:start(Opt),
+    {ok, Pid1} = epcap:start_link(Opt),
     {next_state, sniffing, State#state{pid = Pid1}};
 sniffing(stop, #state{pid = Pid} = State) ->
     epcap:stop(Pid),
