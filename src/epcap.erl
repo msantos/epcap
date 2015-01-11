@@ -44,20 +44,27 @@
 
 -record(state, {pid :: pid(), port :: port()}).
 
+-spec start() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start() ->
     start(self(), []).
+-spec start(proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start(Options) ->
     start(self(), Options).
+-spec start(pid(),proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     gen_server:start(?MODULE, [Pid, Options], []).
 
+-spec start_link() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link() ->
     start_link(self(), []).
+-spec start_link(proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link(Options) ->
     start_link(self(), Options).
+-spec start_link(pid(),proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link(Pid, Options) ->
     gen_server:start_link(?MODULE, [Pid, Options], []).
 
+-spec send(pid(), iodata()) -> ok.
 send(Pid, Packet) when is_pid(Pid) ->
     case iolist_size(Packet) < 16#ffff of
         true ->
@@ -66,6 +73,7 @@ send(Pid, Packet) when is_pid(Pid) ->
             erlang:error(badarg)
     end.
 
+-spec stop(pid()) -> ok.
 stop(Pid) ->
     gen_server:call(Pid, stop).
 
@@ -128,6 +136,7 @@ handle_info(Info, State) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+-spec setopts(proplists:proplist(),proplists:proplist()) -> proplists:proplist().
 setopts([], Options) ->
     proplists:compact(Options);
 setopts([{Key,Val}|Rest], Options) ->
@@ -138,6 +147,7 @@ setopts([{Key,Val}|Rest], Options) ->
             setopts(Rest, Options)
     end.
 
+-spec getopts(proplists:proplist()) -> [string()].
 getopts(Options) when is_list(Options) ->
     Exec = exec(Options),
     Progname = proplists:get_value(progname, Options, progname()),
@@ -149,6 +159,7 @@ getopts(Options) when is_list(Options) ->
 
     [ N || N <- [Exec, Cpu_affinity, Progname|Switches], N /= ""].
 
+-spec optarg(atom() | tuple()) -> string().
 optarg({buffer, Arg})       -> switch("b", Arg);
 optarg({chroot, Arg})       -> switch("d", Arg);
 optarg({cluster_id, Arg})   -> switch("e", env("PCAP_PF_RING_CLUSTER_ID", Arg));
@@ -197,7 +208,7 @@ basedir() ->
 progname() ->
     filename:join([basedir(), ?MODULE]).
 
--spec exec([proplists:property()]) -> string().
+-spec exec(proplists:proplist()) -> string().
 exec(Options) ->
     Exec = proplists:get_value(exec, Options, "sudo"),
     case proplists:is_defined(file, Options) of
@@ -205,7 +216,7 @@ exec(Options) ->
         false -> Exec
     end.
 
--spec cpu_affinity([proplists:property()]) -> string().
+-spec cpu_affinity(proplists:proplist()) -> string().
 cpu_affinity(Options) ->
     case proplists:get_value(cpu_affinity, Options) of
         undefined -> "";
