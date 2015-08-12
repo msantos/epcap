@@ -75,7 +75,8 @@ send(Pid, Packet) when is_pid(Pid) ->
 
 -spec stop(pid()) -> ok.
 stop(Pid) ->
-    gen_server:call(Pid, stop).
+    catch gen_server:call(Pid, stop),
+    ok.
 
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
