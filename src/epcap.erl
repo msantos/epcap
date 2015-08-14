@@ -225,6 +225,7 @@ cpu_affinity(Options) ->
             "taskset -c " ++ CPUs
     end.
 
+-spec timeout() -> 0 | 500.
 timeout() ->
     case os:type() of
         {unix, linux} -> 0;
