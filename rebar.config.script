@@ -7,7 +7,7 @@ PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
                 case lists:keysearch(port_env, 1, CONFIG) of
                     {value, {port_env, Flags}} ->
                         {"EXE_LDFLAGS", LDFLAGS} = hd(Flags),
-                        NewFlags = LDFLAGS ++ " -L " ++ Value ++ " -lpfring -lpthread -lnuma -lrt",
+                        NewFlags = string:join([LDFLAGS, "-L", Value], " "),
                         NewLDFLAGS = lists:keyreplace("EXE_LDFLAGS", 1, Flags, {"EXE_LDFLAGS", NewFlags}),
                         lists:keyreplace(port_env, 1, CONFIG, {port_env, NewLDFLAGS});
                     _ -> CONFIG

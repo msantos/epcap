@@ -98,8 +98,6 @@ epcap includes a small example program called sniff.
 
             PFRING=/home/user/pfring make
 
-        As a result epcap binary will be linked with the following flags: -static -lpfring -lpthread
-
         To complete the configuration you need to set up the cluster_id option.
         The value of the cluster_id option is integer and should be in range between 0 and 255.
 
