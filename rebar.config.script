@@ -1,20 +1,17 @@
 PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
     false ->
-        CONFIG;
+        ok;
     Value ->
         case filelib:is_dir(Value) of
             true ->
-                case lists:keysearch(port_env, 1, CONFIG) of
-                    {value, {port_env, Flags}} ->
-                        {"EXE_LDFLAGS", LDFLAGS} = hd(Flags),
-                        NewFlags = string:join([LDFLAGS, "-L", Value], " "),
-                        NewLDFLAGS = lists:keyreplace("EXE_LDFLAGS", 1, Flags, {"EXE_LDFLAGS", NewFlags}),
-                        lists:keyreplace(port_env, 1, CONFIG, {port_env, NewLDFLAGS});
-                    _ -> CONFIG
-                end;
-            _ -> CONFIG
+                LDFLAGS = os:getenv("EPCAP_LDFLAGS", ""),
+                os:putenv("EPCAP_LDFLAGS",
+                        string:join([LDFLAGS, "-L", Value], " "));
+            _ ->
+                ok
         end
-    end
+    end,
+    CONFIG
 end,
 Pcap_create = fun(CONFIG) ->
     Check = "
@@ -30,15 +27,12 @@ int main(int argc, char *argv[])
     file:delete("test_pcap_create.c"),
     case Retval of
         "0" ->
-            Env = case os:getenv("EPCAP_CFLAGS") of
-            false -> "";
-            N -> N
-            end,
-            os:putenv("EPCAP_CFLAGS", Env ++ " -DHAVE_PCAP_CREATE"),
-            CONFIG;
+            CFLAGS = os:getenv("EPCAP_CFLAGS", ""),
+            os:putenv("EPCAP_CFLAGS", CFLAGS ++ " -DHAVE_PCAP_CREATE");
         _ ->
-            CONFIG
-    end
+            ok
+    end,
+    CONFIG
 end,
 lists:foldl(fun(Fun, Cfg) ->
         Fun(Cfg)

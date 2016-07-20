@@ -7,7 +7,6 @@ priv/
 ebin/
 priv/
 deps/
-.depsolver_plt
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
 *.un~
@@ -15,3 +14,5 @@ Session.vim
 .netrwhist
 *~
 c_src/*.d
+_build/
+.rebar3/

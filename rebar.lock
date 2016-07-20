@@ -1,0 +1,4 @@
+[{<<"pkt">>,
+  {git,"https://github.com/msantos/pkt.git",
+       {ref,"a81fe923d027133d338b060e70e4cddd851ed362"}},
+  0}].
