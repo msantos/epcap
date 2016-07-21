@@ -1,3 +1,34 @@
+TMPDIR = os:getenv("TMPDIR", "/tmp"),
+
+Compile = fun(Name0, Prog) ->
+    Name = filename:join(TMPDIR, Name0),
+    ok = file:write_file(Name, Prog, [write, exclusive]),
+    Cmd = erlang:open_port({spawn, ["${CC-cc} -o /dev/null ", Name, " -lpcap"]},
+            [stream, exit_status]),
+    Status = receive
+        {Cmd, {exit_status, 0}} ->
+            true;
+        {Cmd, {exit_status, _}} ->
+            false
+    end,
+    ok = file:delete(Name),
+    Status
+end,
+
+Test = fun(Name, Prog, Supported, Unsupported) ->
+    case Compile(Name, Prog) of
+        true ->
+            Supported;
+        false ->
+            Unsupported
+    end
+end,
+
+Append = fun(Str, Flag) ->
+    string:join(sets:to_list(sets:add_element(Flag,
+                    sets:from_list(string:tokens(Str, " ")))), " ")
+end,
+
 PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
     false ->
         ok;
@@ -5,14 +36,15 @@ PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
         case filelib:is_dir(Value) of
             true ->
                 LDFLAGS = os:getenv("EPCAP_LDFLAGS", ""),
-                os:putenv("EPCAP_LDFLAGS",
-                        string:join([LDFLAGS, "-L", Value], " "));
+                true = os:putenv("EPCAP_LDFLAGS",
+                        Append(LDFLAGS, "-L" ++ Value));
             _ ->
                 ok
         end
     end,
     CONFIG
 end,
+
 Pcap_create = fun(CONFIG) ->
     Check = "
 #include <pcap.h>
@@ -22,18 +54,13 @@ int main(int argc, char *argv[])
     (void)pcap_create(NULL, errbuf);
     return 0;
 }",
-    ok = file:write_file("test_pcap_create.c", Check),
-    Retval = os:cmd("cc -o /dev/null test_pcap_create.c -lpcap > /dev/null 2>&1; printf \"%d\" $?"),
-    file:delete("test_pcap_create.c"),
-    case Retval of
-        "0" ->
-            CFLAGS = os:getenv("EPCAP_CFLAGS", ""),
-            os:putenv("EPCAP_CFLAGS", CFLAGS ++ " -DHAVE_PCAP_CREATE");
-        _ ->
-            ok
-    end,
+
+    Flag = Test("test_pcap_create.c", Check, "-DHAVE_PCAP_CREATE", ""),
+    Define = os:getenv("EPCAP_CFLAGS", ""),
+    true = os:putenv("EPCAP_CFLAGS", Append(Define, Flag)),
     CONFIG
 end,
+
 lists:foldl(fun(Fun, Cfg) ->
         Fun(Cfg)
     end,
