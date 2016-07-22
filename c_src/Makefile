@@ -23,12 +23,16 @@ ifeq ($(UNAME_SYS), Darwin)
 	LDFLAGS ?= -arch x86_64 -flat_namespace -undefined suppress
 else ifeq ($(UNAME_SYS), FreeBSD)
 	CC ?= cc
-	CFLAGS ?= -O3 -finline-functions -Wall -Wmissing-prototypes
-	CXXFLAGS ?= -O3 -finline-functions -Wall
+	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro
+	CFLAGS ?= -O3 -finline-functions -Wall -Wmissing-prototypes -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fno-strict-aliasing
+else ifeq ($(UNAME_SYS), OpenBSD)
+	CC ?= cc
+	LDFLAGS ?= -Wl,-z,relro
+	CFLAGS ?= -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
-	CFLAGS ?= -DEPCAP_RLIMIT_NOFILES=1 -O3 -finline-functions -Wall -Wmissing-prototypes
-	CXXFLAGS ?= -O3 -finline-functions -Wall
+	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro
+	CFLAGS ?= -DEPCAP_RLIMIT_NOFILES=1 -O3 -finline-functions -Wall -Wmissing-prototypes -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), SunOS)
 	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1 -DEPCAP_RLIMIT_NOFILES=1
 endif
