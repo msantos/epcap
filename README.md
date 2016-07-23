@@ -12,9 +12,11 @@ epcap includes a small example program called sniff.
 
 ## QUICK SETUP
 
-    cd epcap
-    make
-    make examples
+    $ rebar3 compile # or: make
+
+To compile the examples:
+
+    $ make examples
 
     # Allow your user to epcap with root privs
     sudo visudo
@@ -23,7 +25,7 @@ epcap includes a small example program called sniff.
     Defaults!/path/to/epcap/priv/epcap !requiretty
     Defaults:youruser !requiretty
 
-    erl -pa ebin deps/*/ebin # or: rebar shell
+    rebar3 shell
 
     % Start the sniffer process
     sniff:start_link().
