@@ -39,6 +39,7 @@ epcap_test_() ->
     % Solaris pcap using DLPI requires the interface to be in promiscuous
     % mode for outgoing packets to be captured
     {ok, Ref} = epcap:start(epcap_dev() ++ [
+            {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
             inject,
             {filter, "tcp and ( port 29 or port 39 )"},
             promiscuous
