@@ -2,11 +2,6 @@
 *.beam
 ebin/
 priv/
-.eunit/
-.rebar/
-ebin/
-priv/
-deps/
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
 *.un~
