@@ -29,6 +29,15 @@ Append = fun(Str, Flag) ->
                     sets:from_list(string:tokens(Str, " ")))), " ")
 end,
 
+Setenv = fun(Key, Val) ->
+    Cur = os:getenv(Key, ""),
+    os:putenv(Key, Append(Cur, Val))
+end,
+
+%%
+%% Tests
+%%
+
 PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
     false ->
         ok;
@@ -36,8 +45,7 @@ PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
         case filelib:is_dir(Value) of
             true ->
                 LDFLAGS = os:getenv("EPCAP_LDFLAGS", ""),
-                true = os:putenv("EPCAP_LDFLAGS",
-                        Append(LDFLAGS, "-L" ++ Value));
+                true = Setenv("EPCAP_LDFLAGS", "-L" ++ Value);
             _ ->
                 ok
         end
@@ -56,8 +64,7 @@ int main(int argc, char *argv[])
 }",
 
     Flag = Test("test_pcap_create.c", Check, "-DHAVE_PCAP_CREATE", ""),
-    Define = os:getenv("EPCAP_CFLAGS", ""),
-    true = os:putenv("EPCAP_CFLAGS", Append(Define, Flag)),
+    true = Setenv("EPCAP_CFLAGS", Flag),
     CONFIG
 end,
 
