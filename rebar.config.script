@@ -38,7 +38,7 @@ end,
 %% Tests
 %%
 
-PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
+PFRING = fun(Config) -> case os:getenv("PFRING") of
     false ->
         ok;
     Value ->
@@ -50,10 +50,10 @@ PFRING = fun(CONFIG) -> case os:getenv("PFRING") of
                 ok
         end
     end,
-    CONFIG
+    Config
 end,
 
-Pcap_create = fun(CONFIG) ->
+Pcap_create = fun(Config) ->
     Check = "
 #include <pcap.h>
 int main(int argc, char *argv[])
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
     Flag = Test("test_pcap_create.c", Check, "-DHAVE_PCAP_CREATE", ""),
     true = Setenv("EPCAP_CFLAGS", Flag),
-    CONFIG
+    Config
 end,
 
 lists:foldl(fun(Fun, Cfg) ->
