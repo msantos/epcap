@@ -23,21 +23,22 @@ ifeq ($(UNAME_SYS), Darwin)
 	LDFLAGS ?= -arch x86_64 -flat_namespace -undefined suppress
 else ifeq ($(UNAME_SYS), FreeBSD)
 	CC ?= cc
-	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro
-	CFLAGS ?= -O3 -finline-functions -Wall -Wmissing-prototypes -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fno-strict-aliasing
+	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
+	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), OpenBSD)
 	CC ?= cc
-	LDFLAGS ?= -Wl,-z,relro
-	CFLAGS ?= -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fno-strict-aliasing
+	LDFLAGS ?= -Wl,-z,relro,-z,now
+	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
-	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro
-	CFLAGS ?= -DEPCAP_RLIMIT_NOFILES=1 -O3 -finline-functions -Wall -Wmissing-prototypes -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -fno-strict-aliasing
+	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
+	CFLAGS ?= -DEPCAP_RLIMIT_NOFILES=1 -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), SunOS)
 	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1 -DEPCAP_RLIMIT_NOFILES=1
 endif
 
-CFLAGS += $(EPCAP_CFLAGS) -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
+EPCAP_CFLAGS ?= -g -Wall -fwrapv
+CFLAGS += $(EPCAP_CFLAGS) -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 CXXFLAGS += -I $(ERTS_INCLUDE_DIR) -fPIC -I $(ERL_INTERFACE_INCLUDE_DIR)
 
 LDLIBS += -lpcap -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
@@ -47,9 +48,6 @@ LDFLAGS += $(EPCAP_LDFLAGS)
 
 c_verbose_0 = @echo " C     " $(?F);
 c_verbose = $(c_verbose_$(V))
-
-cpp_verbose_0 = @echo " CPP   " $(?F);
-cpp_verbose = $(cpp_verbose_$(V))
 
 link_verbose_0 = @echo " LD    " $(@F);
 link_verbose = $(link_verbose_$(V))
@@ -66,15 +64,6 @@ $(C_SRC_OUTPUT): $(OBJECTS)
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
-
-%.o: %.cc
-	$(COMPILE_CPP) $(OUTPUT_OPTION) $<
-
-%.o: %.C
-	$(COMPILE_CPP) $(OUTPUT_OPTION) $<
-
-%.o: %.cpp
-	$(COMPILE_CPP) $(OUTPUT_OPTION) $<
 
 clean:
 	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
