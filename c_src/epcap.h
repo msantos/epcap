@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2017, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -119,5 +119,5 @@ typedef struct {
 
 
 int epcap_priv_drop(EPCAP_STATE *);
-void epcap_priv_issetuid(EPCAP_STATE *);
+int epcap_priv_runasuser(EPCAP_STATE *ep);
 int epcap_priv_rlimits(int);

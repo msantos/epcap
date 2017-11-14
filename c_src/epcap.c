@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2017, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -137,7 +137,9 @@ main(int argc, char *argv[])
 
     IS_LTZERO(fd = open("/dev/null", O_RDWR));
 
-    epcap_priv_issetuid(ep);
+    if (epcap_priv_runasuser(ep) < 0)
+      err(EXIT_FAILURE, "epcap_priv_runasuser");
+
     IS_LTZERO(epcap_open(ep));
     if (epcap_priv_drop(ep) < 0)
         exit (1);
