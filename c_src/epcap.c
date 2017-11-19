@@ -65,7 +65,10 @@ main(int argc, char *argv[])
     int fd = 0;
 
 
-    IS_NULL(ep = calloc(1, sizeof(EPCAP_STATE)));
+    ep = calloc(1, sizeof(EPCAP_STATE));
+
+    if (ep == NULL)
+      exit(ENOMEM);
 
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
@@ -76,27 +79,52 @@ main(int argc, char *argv[])
                 ep->bufsz = atoi(optarg);
                 break;
             case 'd':   /* chroot directory */
-                IS_NULL(ep->chroot = strdup(optarg));
+                ep->chroot = strdup(optarg);
+
+                if (ep->chroot == NULL)
+                  exit(ENOMEM);
+
                 break;
             case 'e': {
                 char *name = NULL;
                 char *value = NULL;
-                IS_NULL(name = strdup(optarg));
-                IS_NULL(value = strchr(name, '='));
+
+                name = strdup(optarg);
+
+                if (name == NULL)
+                  exit(ENOMEM);
+
+                value = strchr(name, '=');
+
+                if (value == NULL)
+                  exit(EINVAL);
+
                 *value = '\0'; value++;
                 IS_FALSE(setenv(name, value, 0));
                 free(name);
                 }
                 break;
             case 'f':
-                IS_NULL(ep->file = strdup(optarg));
+                ep->file = strdup(optarg);
+
+                if (ep->file == NULL)
+                  exit(ENOMEM);
+
                 ep->opt |= EPCAP_OPT_RUNASUSER;
                 break;
             case 'g':
-                IS_NULL(ep->group = strdup(optarg));
+                ep->group = strdup(optarg);
+
+                if (ep->group == NULL)
+                  exit(ENOMEM);
+
                 break;
             case 'i':
-                IS_NULL(ep->dev = strdup(optarg));
+                ep->dev = strdup(optarg);
+
+                if (ep->dev == NULL)
+                  exit(ENOMEM);
+
                 break;
             case 'M':
                 ep->opt |= EPCAP_OPT_RFMON;
@@ -111,7 +139,11 @@ main(int argc, char *argv[])
                 ep->timeout = (u_int32_t)atoi(optarg);
                 break;
             case 'u':
-                IS_NULL(ep->user = strdup(optarg));
+                ep->user = strdup(optarg);
+
+                if (ep->user == NULL)
+                  exit(ENOMEM);
+
                 break;
             case 'v':
                 ep->verbose++;
@@ -128,7 +160,10 @@ main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    IS_NULL(ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER));
+    ep->filt = strdup( (argc == 1) ? argv[0] : EPCAP_FILTER);
+
+    if (ep->filt == NULL)
+      exit(ENOMEM);
 
     if (ep->verbose > 0) {
         for ( ; *environ; environ++)

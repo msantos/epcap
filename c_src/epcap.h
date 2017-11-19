@@ -71,11 +71,6 @@
     errx(EXIT_FAILURE, "%s: %s", #x, errbuf); \
 } while (0);
 
-#define IS_NULL(x) do { \
-    if ((x) == NULL) \
-    errx(EXIT_FAILURE, "%s", #x); \
-} while (0);
-
 #define IS_FALSE(x) do { \
     if ((x) != 0) \
     errx(EXIT_FAILURE, "%s", #x); \
