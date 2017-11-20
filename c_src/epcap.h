@@ -66,11 +66,6 @@
 #define EPCAP_CHROOT    "/var/empty"
 #define EPCAP_FILTER    ""      /* match any packet */
 
-#define PCAP_ERRBUF(x) do { \
-    if ((x) == NULL) \
-    errx(EXIT_FAILURE, "%s: %s", #x, errbuf); \
-} while (0);
-
 #define IS_FALSE(x) do { \
     if ((x) != 0) \
     errx(EXIT_FAILURE, "%s", #x); \
@@ -110,6 +105,7 @@ typedef struct {
     char *group;        /* run as unprivilted group */
     char *chroot;       /* chroot directory */
     char *file;         /* filename in case we read from pcap file */
+    char errbuf[PCAP_ERRBUF_SIZE];  /* pcap error */
 } EPCAP_STATE;
 
 

@@ -170,12 +170,17 @@ main(int argc, char *argv[])
             VERBOSE(2, "env:%s\n", *environ);
     }
 
-    IS_LTZERO(fd = open("/dev/null", O_RDWR));
+    fd = open("/dev/null", O_RDWR);
+
+    if (fd < 0)
+      exit(errno);
 
     if (epcap_priv_runasuser(ep) < 0)
       err(EXIT_FAILURE, "epcap_priv_runasuser");
 
-    IS_LTZERO(epcap_open(ep));
+    if (epcap_open(ep) < 0)
+      exit(errno);
+
     if (epcap_priv_drop(ep) < 0)
         exit (1);
 
@@ -270,21 +275,32 @@ epcap_send(EPCAP_STATE *ep)
     static int
 epcap_open(EPCAP_STATE *ep)
 {
-    char errbuf[PCAP_ERRBUF_SIZE];
-
     if (ep->file) {
-        PCAP_ERRBUF(ep->p = pcap_open_offline(ep->file, errbuf));
+        ep->p = pcap_open_offline(ep->file, ep->errbuf);
+
+        if (ep->p == NULL)
+          return -1;
     } else {
-        if (ep->dev == NULL)
-            PCAP_ERRBUF(ep->dev = pcap_lookupdev(errbuf));
+        if (ep->dev == NULL) {
+            ep->dev = pcap_lookupdev(ep->errbuf);
+
+            if (ep->dev == NULL)
+              return -1;
+        }
 
 #ifdef HAVE_PCAP_CREATE
-        PCAP_ERRBUF(ep->p = pcap_create(ep->dev, errbuf));
+        ep->p = pcap_create(ep->dev, ep->errbuf);
+
+        if (ep->p == NULL)
+          return -1;
+
         (void)pcap_set_snaplen(ep->p, ep->snaplen);
         (void)pcap_set_promisc(ep->p, ep->opt & EPCAP_OPT_PROMISC);
         (void)pcap_set_timeout(ep->p, ep->timeout);
+
         if (ep->bufsz > 0)
             (void)pcap_set_buffer_size(ep->p, ep->bufsz);
+
         switch (pcap_activate(ep->p)) {
             case 0:
                 break;
@@ -293,14 +309,18 @@ epcap_open(EPCAP_STATE *ep)
             case PCAP_WARNING_PROMISC_NOTSUP:
             case PCAP_ERROR_NO_SUCH_DEVICE:
             case PCAP_ERROR_PERM_DENIED:
-                pcap_perror(ep->p, "pcap_activate: ");
-                exit(EXIT_FAILURE);
+                (void)strncpy(ep->errbuf, pcap_geterr(ep->p),
+                    sizeof(ep->errbuf)-1);
+                return -1;
             default:
-                exit(EXIT_FAILURE);
+                return -1;
         }
 #else
-        PCAP_ERRBUF(ep->p = pcap_open_live(ep->dev, ep->snaplen,
-                    ep->opt & EPCAP_OPT_PROMISC, ep->timeout, errbuf));
+        ep->p = pcap_open_live(ep->dev, ep->snaplen,
+            ep->opt & EPCAP_OPT_PROMISC, ep->timeout, ep->errbuf);
+
+        if (ep->p == NULL)
+          return -1;
 #endif
 
         /* monitor mode */
