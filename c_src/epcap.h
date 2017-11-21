@@ -71,11 +71,6 @@
     errx(EXIT_FAILURE, "%s", #x); \
 } while (0);
 
-#define IS_LTZERO(x) do { \
-    if ((x) < 0) \
-    errx(EXIT_FAILURE, "%s", #x); \
-} while (0);
-
 #define VERBOSE(x, ...) do { \
     if (ep->verbose >= x) { \
         (void)fprintf (stderr, __VA_ARGS__); \

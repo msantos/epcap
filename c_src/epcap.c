@@ -182,7 +182,7 @@ main(int argc, char *argv[])
       exit(errno);
 
     if (epcap_priv_drop(ep) < 0)
-        exit (1);
+      exit(errno);
 
     signal(SIGCHLD, gotsig);
 
@@ -190,10 +190,18 @@ main(int argc, char *argv[])
         case -1:
             err(EXIT_FAILURE, "fork");
         case 0:
-            IS_LTZERO(dup2(fd, STDIN_FILENO));
-            IS_LTZERO(close(fd));
-            IS_LTZERO(epcap_init(ep));
-            IS_LTZERO(epcap_priv_rlimits(EPCAP_RLIMIT_NOFILES));
+            if (dup2(fd, STDIN_FILENO) < 0)
+              exit(errno);
+
+            if (close(fd) < 0)
+              exit(errno);
+
+            if (epcap_init(ep) < 0)
+              exit(errno);
+
+            if (epcap_priv_rlimits(EPCAP_RLIMIT_NOFILES) < 0)
+              exit(errno);
+
             epcap_loop(ep);
             break;
         default:

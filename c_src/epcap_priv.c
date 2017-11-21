@@ -64,9 +64,14 @@ epcap_priv_drop(EPCAP_STATE *ep)
         return -1;
     }
 
-    IS_LTZERO(chdir("/"));
-    IS_LTZERO(setgid(ep->group ? gr->gr_gid : pw->pw_gid));
-    IS_LTZERO(setuid(pw->pw_uid));
+    if (chdir("/") < 0)
+      return -1;
+
+    if (setgid(ep->group ? gr->gr_gid : pw->pw_gid) < 0)
+      return -1;
+
+    if (setuid(pw->pw_uid) < 0)
+      return -1;
 
     return 0;
 }
