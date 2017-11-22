@@ -173,6 +173,7 @@ optarg({snaplen, Arg})      -> switch("s", Arg);
 optarg({timeout, Arg})      -> switch("t", Arg);
 optarg({user, Arg})         -> switch("u", Arg);
 optarg(verbose)             -> switch("v");
+optarg({verbose, 0})        -> "";
 optarg({verbose, Arg})      -> switch(string:copies("v", Arg));
 optarg(inject)              -> switch("X");
 optarg(_)                   -> "".
