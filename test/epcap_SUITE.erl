@@ -1,4 +1,4 @@
-%% Copyright (c) 2013-2015, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2013-2017, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -28,49 +28,71 @@
 %% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
--module(epcap_tests).
+-module(epcap_SUITE).
 
--compile(export_all).
-
--include_lib("eunit/include/eunit.hrl").
+-include_lib("common_test/include/ct.hrl").
 -include_lib("pkt/include/pkt.hrl").
 
-epcap_test_() ->
+-export([
+        suite/0,
+        all/0,
+        init_per_testcase/2,
+        end_per_testcase/2
+    ]).
+-export([
+        filter/1,
+        send/1
+        ]).
+
+all() ->
+  [
+   filter,
+   send
+  ].
+
+suite() ->
+  [{timetrap, {seconds, 10}}].
+
+init_per_testcase(_Test, Config) ->
+    Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
+        false -> [];
+        N -> [{interface, N}]
+    end,
+
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+
     % Solaris pcap using DLPI requires the interface to be in promiscuous
     % mode for outgoing packets to be captured
-    {ok, Ref} = epcap:start(epcap_dev() ++ [
+    {ok, Drv} = epcap:start(Dev ++ [
             {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
-            inject,
+            inject, {verbose, Verbose},
             {filter, "tcp and ( port 29 or port 39 )"},
             promiscuous
         ]),
 
-    {timeout, 480, [
-            {?LINE, fun() -> epcap_filter(Ref) end},
-            {?LINE, fun() -> epcap_send(Ref) end}
-        ]}.
+		[{drv, Drv}|Config].
 
-epcap_dev() ->
-    case os:getenv("EPCAP_TEST_INTERFACE") of
-        false -> [];
-        Dev -> [{interface, Dev}]
-    end.
+end_per_testcase(_Test, Config) ->
+    Drv = ?config(drv, Config),
+    epcap:stop(Drv).
 
-epcap_filter(_Ref) ->
+filter(_Config) ->
     {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     receive
         {packet, DataLinkType, Time, Length, Packet} ->
-            error_logger:info_report([
+            ct:pal(io_lib:format("~p", [[
                     {dlt, DataLinkType},
                     {time, Time},
                     {length, Length},
                     {packet, Packet}
-                ]),
+                ]])),
             [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
     end.
 
-epcap_send(Ref) ->
+send(Config) ->
+    Drv = ?config(drv, Config),
+
     {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     Frame = receive
@@ -86,24 +108,24 @@ epcap_send(Ref) ->
                     Payload
                 ])
     end,
-    error_logger:info_report([{frame, Frame}]),
-    ok = epcap:send(Ref, Frame),
-    epcap_send_1().
+    ct:pal(io_lib:format("~p", [[{frame, Frame}]])),
+    ok = epcap:send(Drv, Frame),
+    send_1().
 
-epcap_send_1() ->
+send_1() ->
     receive
         {packet, DataLinkType, Time, Length, Packet} ->
             case pkt:decapsulate(Packet) of
                 [#ether{}, #ipv4{}, #tcp{dport = 39}, _Payload] ->
-                    error_logger:info_report([
+                    ct:pal(io_lib:format("~p", [[
                         {dlt, DataLinkType},
                         {time, Time},
                         {length, Length},
                         {packet, Packet}
-                    ]),
+                    ]])),
                     ok;
                 % TCP SYN retries
                 [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] ->
-                    epcap_send_1()
+                    send_1()
             end
     end.
