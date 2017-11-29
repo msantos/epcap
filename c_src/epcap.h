@@ -91,8 +91,8 @@ typedef struct {
     int datalink;       /* dlt */
     int opt;            /* options */
     int verbose;        /* debug messages */
-    size_t snaplen;     /* packet capture length */
-    u_int32_t timeout;  /* capture timeout */
+    int snaplen;        /* packet capture length */
+    int timeout;        /* capture timeout */
     int bufsz;          /* pcap buf size */
     char *filt;         /* packet filter */
     char *dev;          /* device to snoop */
@@ -107,3 +107,8 @@ typedef struct {
 int epcap_priv_drop(EPCAP_STATE *);
 int epcap_priv_runasuser(EPCAP_STATE *ep);
 int epcap_priv_rlimits(int);
+
+#ifndef HAVE_STRTONUM
+long long strtonum(const char *numstr, long long minval, long long maxval,
+            const char **errstrp);
+#endif

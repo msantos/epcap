@@ -24,11 +24,11 @@ ifeq ($(UNAME_SYS), Darwin)
 else ifeq ($(UNAME_SYS), FreeBSD)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
-	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	CFLAGS ?= -DHAVE_STRTONUM -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), OpenBSD)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-z,relro,-z,now
-	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	CFLAGS ?= -DHAVE_STRTONUM -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now

@@ -76,7 +76,9 @@ main(int argc, char *argv[])
     while ( (ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:t:u:vX")) != -1) {
         switch (ch) {
             case 'b':
-                ep->bufsz = atoi(optarg);
+                ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
+                if (errno)
+                  exit(errno);
                 break;
             case 'd':   /* chroot directory */
                 ep->chroot = strdup(optarg);
@@ -133,10 +135,14 @@ main(int argc, char *argv[])
                 ep->opt |= EPCAP_OPT_PROMISC;
                 break;
             case 's':
-                ep->snaplen = (size_t)atoi(optarg);
+                ep->snaplen = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
+                if (errno)
+                  exit(errno);
                 break;
             case 't':
-                ep->timeout = (u_int32_t)atoi(optarg);
+                ep->timeout = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
+                if (errno)
+                  exit(errno);
                 break;
             case 'u':
                 ep->user = strdup(optarg);
