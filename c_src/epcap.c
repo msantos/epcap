@@ -102,7 +102,10 @@ main(int argc, char *argv[])
                   exit(EINVAL);
 
                 *value = '\0'; value++;
-                IS_FALSE(setenv(name, value, 0));
+
+                if (setenv(name, value, 0) < 0)
+                  exit(errno);
+
                 free(name);
                 }
                 break;
