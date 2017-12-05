@@ -66,9 +66,8 @@
 #define EPCAP_CHROOT    "/var/empty"
 #define EPCAP_FILTER    ""      /* match any packet */
 
-#define IS_FALSE(x) do { \
-    if ((x) != 0) \
-    errx(EXIT_FAILURE, "%s", #x); \
+#define EPCAP_ENCODE_ERR(x) do { \
+    if ((x) != 0) exit(ENOMEM); \
 } while (0);
 
 #define VERBOSE(x, ...) do { \

@@ -410,10 +410,10 @@ epcap_ctrl(const char *ctrl_evt)
 {
     ei_x_buff msg;
 
-    IS_FALSE(ei_x_new_with_version(&msg));
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 2));
-    IS_FALSE(ei_x_encode_atom(&msg, "epcap"));
-    IS_FALSE(ei_x_encode_atom(&msg, ctrl_evt));
+    EPCAP_ENCODE_ERR(ei_x_new_with_version(&msg));
+    EPCAP_ENCODE_ERR(ei_x_encode_tuple_header(&msg, 2));
+    EPCAP_ENCODE_ERR(ei_x_encode_atom(&msg, "epcap"));
+    EPCAP_ENCODE_ERR(ei_x_encode_atom(&msg, ctrl_evt));
 
     epcap_send_free(&msg);
 }
@@ -424,26 +424,26 @@ epcap_response(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt)
     EPCAP_STATE *ep = (EPCAP_STATE *)user;
     ei_x_buff msg = {0};
 
-    IS_FALSE(ei_x_new_with_version(&msg));
+    EPCAP_ENCODE_ERR(ei_x_new_with_version(&msg));
 
     /* {packet, DatalinkType, Time, ActualLength, Packet} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 5));
-    IS_FALSE(ei_x_encode_atom(&msg, "packet"));
+    EPCAP_ENCODE_ERR(ei_x_encode_tuple_header(&msg, 5));
+    EPCAP_ENCODE_ERR(ei_x_encode_atom(&msg, "packet"));
 
     /* DataLinkType */
-    IS_FALSE(ei_x_encode_long(&msg, ep->datalink));
+    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, ep->datalink));
 
     /* {MegaSec, Sec, MicroSec} */
-    IS_FALSE(ei_x_encode_tuple_header(&msg, 3));
-    IS_FALSE(ei_x_encode_long(&msg, abs(hdr->ts.tv_sec / 1000000)));
-    IS_FALSE(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
-    IS_FALSE(ei_x_encode_long(&msg, hdr->ts.tv_usec));
+    EPCAP_ENCODE_ERR(ei_x_encode_tuple_header(&msg, 3));
+    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, abs(hdr->ts.tv_sec / 1000000)));
+    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
+    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_usec));
 
     /* ActualLength} */
-    IS_FALSE(ei_x_encode_long(&msg, hdr->len));
+    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->len));
 
     /* Packet */
-    IS_FALSE(ei_x_encode_binary(&msg, pkt, hdr->caplen));
+    EPCAP_ENCODE_ERR(ei_x_encode_binary(&msg, pkt, hdr->caplen));
 
     /* } */
 
