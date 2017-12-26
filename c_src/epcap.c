@@ -48,14 +48,6 @@ int child_exited = 0;
 
 extern char **environ;
 
-/* On some platforms (Linux), poll() (used by pcap)
- * will return EINVAL if RLIMIT_NOFILES < numfd */
-#ifndef EPCAP_RLIMIT_NOFILES
-#define EPCAP_RLIMIT_NOFILES 0
-#warning "Using default value of EPCAP_RLIMIT_NOFILES=0"
-#endif
-
-
     int
 main(int argc, char *argv[])
 {
@@ -208,7 +200,7 @@ main(int argc, char *argv[])
             if (epcap_init(ep) < 0)
               exit(errno);
 
-            if (epcap_priv_rlimits(EPCAP_RLIMIT_NOFILES) < 0)
+            if (epcap_sandbox_pcap() < 0)
               exit(errno);
 
             epcap_loop(ep);
@@ -221,7 +213,7 @@ main(int argc, char *argv[])
             if (!(ep->opt & EPCAP_OPT_INJECT))
                 pcap_close(ep->p);
 
-            if (epcap_priv_rlimits(0) < 0)
+            if (epcap_sandbox_erl() < 0)
                 goto CLEANUP;
 
             epcap_send(ep);
@@ -500,7 +492,8 @@ gotsig(int sig)
     static void
 usage(EPCAP_STATE *ep)
 {
-    (void)fprintf(stderr, "%s, %s\n", __progname, EPCAP_VERSION);
+    (void)fprintf(stderr, "%s, %s (using %s sandbox)\n", __progname,
+            EPCAP_VERSION, EPCAP_SANDBOX);
     (void)fprintf(stderr,
             "usage: %s <options>\n"
             "              -d <directory>   chroot directory\n"

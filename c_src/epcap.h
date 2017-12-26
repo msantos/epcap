@@ -105,7 +105,9 @@ typedef struct {
 
 int epcap_priv_drop(EPCAP_STATE *);
 int epcap_priv_runasuser(EPCAP_STATE *ep);
-int epcap_priv_rlimits(int);
+
+int epcap_sandbox_pcap();
+int epcap_sandbox_erl();
 
 #ifndef HAVE_STRTONUM
 long long strtonum(const char *numstr, long long minval, long long maxval,

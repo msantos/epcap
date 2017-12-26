@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2017, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,65 +29,52 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <pwd.h>
-#include <grp.h>
+
+#ifdef EPCAP_SANDBOX_rlimit
 
 #include "epcap.h"
 
+/* On some platforms (Linux), poll() (used by pcap)
+ *  * will return EINVAL if RLIMIT_NOFILES < numfd */
+#ifndef EPCAP_RLIMIT_NOFILES
+#define EPCAP_RLIMIT_NOFILES 0
+#warning "Using default value of EPCAP_RLIMIT_NOFILES=0"
+#endif
+
     int
-epcap_priv_drop(EPCAP_STATE *ep)
+epcap_sandbox_pcap()
 {
-    struct passwd *pw = NULL;
-    struct group *gr = NULL;
+    struct rlimit rl = {0};
 
-    if (geteuid() != 0)
-        return 1;
-
-    if (!ep->user)
-        ep->user = EPCAP_USER;
-
-    if (!ep->chroot)
-        ep->chroot = EPCAP_CHROOT;
-
-    if ( (pw = getpwnam(ep->user)) == NULL) {
-        warnx("user does not exist: %s", ep->user);
+    if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
         return -1;
-    }
 
-    if (ep->group && (gr = getgrnam(ep->group)) == NULL) {
-        warnx("group does not exist: %s", ep->group);
+    if (setrlimit(RLIMIT_NPROC, &rl) != 0)
         return -1;
-    }
 
-    if (chroot(ep->chroot) < 0) {
-        warn("%s", ep->chroot);
+    rl.rlim_cur = EPCAP_RLIMIT_NOFILES;
+    rl.rlim_max = EPCAP_RLIMIT_NOFILES;
+
+    if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
         return -1;
-    }
-
-    if (chdir("/") < 0)
-      return -1;
-
-    if (setgid(ep->group ? gr->gr_gid : pw->pw_gid) < 0)
-      return -1;
-
-    if (setuid(pw->pw_uid) < 0)
-      return -1;
 
     return 0;
 }
 
-
     int
-epcap_priv_runasuser(EPCAP_STATE *ep)
+epcap_sandbox_erl()
 {
-    if ( !(ep->opt & EPCAP_OPT_RUNASUSER) || (geteuid() != 0))
-      return 0;
+    struct rlimit rl = {0};
 
-    if (setgid(getgid()) < 0)
-      return -1;
+    if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
+        return -1;
 
-    if (setuid(getuid()) < 0)
-      return -1;
+    if (setrlimit(RLIMIT_NPROC, &rl) != 0)
+        return -1;
+
+    if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+        return -1;
 
     return 0;
 }
+#endif

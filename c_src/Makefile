@@ -37,9 +37,11 @@ else ifeq ($(UNAME_SYS), SunOS)
 	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1 -DEPCAP_RLIMIT_NOFILES=1
 endif
 
+EPCAP_SANDBOX ?= rlimit
+
 EPCAP_CFLAGS ?= -g -Wall -fwrapv
-CFLAGS += $(EPCAP_CFLAGS) -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-CXXFLAGS += -I $(ERTS_INCLUDE_DIR) -fPIC -I $(ERL_INTERFACE_INCLUDE_DIR)
+CFLAGS += $(EPCAP_CFLAGS) -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) \
+          -DEPCAP_SANDBOX=\"$(EPCAP_SANDBOX)\" -DEPCAP_SANDBOX_$(EPCAP_SANDBOX)
 
 LDLIBS += -lpcap -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
 LDFLAGS += $(EPCAP_LDFLAGS)
@@ -55,15 +57,10 @@ link_verbose = $(link_verbose_$(V))
 SOURCES := $(shell find $(C_SRC_DIR) -type f \( -name "*.c" -o -name "*.C" -o -name "*.cc" -o -name "*.cpp" \))
 OBJECTS = $(addsuffix .o, $(basename $(SOURCES)))
 
-COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) $(CPPFLAGS) -c
-COMPILE_CPP = $(cpp_verbose) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
+COMPILE_C = $(c_verbose) $(CC) $(CFLAGS)
 
-$(C_SRC_OUTPUT): $(OBJECTS)
-	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
-
-%.o: %.c
-	$(COMPILE_C) $(OUTPUT_OPTION) $<
+$(C_SRC_OUTPUT):
+	$(COMPILE_C) -o $(C_SRC_OUTPUT) $(SOURCES) $(LDFLAGS) $(LDLIBS)
 
 clean:
 	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
