@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 }",
 
     Flag = Test("test_pcap_create.c", Check, "-DHAVE_PCAP_CREATE", ""),
-    true = Setenv("EPCAP_CFLAGS", Flag),
+    true = Setenv("EPCAP_DEFINE", Flag),
     Config
 end,
 
