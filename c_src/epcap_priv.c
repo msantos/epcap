@@ -49,20 +49,14 @@ epcap_priv_drop(EPCAP_STATE *ep)
     if (!ep->chroot)
         ep->chroot = EPCAP_CHROOT;
 
-    if ( (pw = getpwnam(ep->user)) == NULL) {
-        warnx("user does not exist: %s", ep->user);
+    if ( (pw = getpwnam(ep->user)) == NULL)
         return -1;
-    }
 
-    if (ep->group && (gr = getgrnam(ep->group)) == NULL) {
-        warnx("group does not exist: %s", ep->group);
+    if (ep->group && (gr = getgrnam(ep->group)) == NULL)
         return -1;
-    }
 
-    if (chroot(ep->chroot) < 0) {
-        warn("%s", ep->chroot);
+    if (chroot(ep->chroot) < 0)
         return -1;
-    }
 
     if (chdir("/") < 0)
       return -1;

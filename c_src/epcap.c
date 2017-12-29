@@ -178,7 +178,7 @@ main(int argc, char *argv[])
       exit(errno);
 
     if (epcap_priv_runasuser(ep) < 0)
-      err(EXIT_FAILURE, "epcap_priv_runasuser");
+      exit(errno);
 
     if (epcap_open(ep) < 0)
       exit(errno);
@@ -190,7 +190,7 @@ main(int argc, char *argv[])
 
     switch (pid = fork()) {
         case -1:
-            err(EXIT_FAILURE, "fork");
+            exit(errno);
         case 0:
             if (dup2(fd, STDIN_FILENO) < 0)
               exit(errno);
@@ -458,7 +458,7 @@ epcap_send_free(ei_x_buff *msg)
 
     if (writev(STDOUT_FILENO, iov, sizeof(iov)/sizeof(iov[0])) !=
             sizeof(len) + msg->index)
-        errx(EXIT_FAILURE, "write packet failed: %d", msg->index);
+        exit(errno);
 
     ei_x_free(msg);
 }
