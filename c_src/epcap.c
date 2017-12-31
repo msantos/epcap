@@ -32,6 +32,11 @@
 #include <stdint.h>
 #include <ei.h>
 
+#ifdef EPCAP_SANDBOX_capsicum
+#include <sys/param.h>
+#include <sys/procdesc.h>
+#endif
+
 #include "epcap.h"
 
 static int epcap_open(EPCAP_STATE *);
@@ -56,7 +61,6 @@ main(int argc, char *argv[])
     pid_t pid = 0;
     int ch = 0;
     int fd = 0;
-
 
     ep = calloc(1, sizeof(EPCAP_STATE));
 
@@ -188,7 +192,12 @@ main(int argc, char *argv[])
 
     signal(SIGCHLD, gotsig);
 
-    switch (pid = fork()) {
+#ifdef EPCAP_SANDBOX_capsicum
+    pid = pdfork(&ep->pdfd, 0);
+#else
+    pid = fork();
+#endif
+    switch (pid) {
         case -1:
             exit(errno);
         case 0:
@@ -220,7 +229,11 @@ main(int argc, char *argv[])
             epcap_send(ep);
 
 CLEANUP:
+#ifdef EPCAP_SANDBOX_capsicum
+            (void)pdkill(ep->pdfd, SIGTERM);
+#else
             (void)kill(pid, SIGTERM);
+#endif
             break;
     }
 
@@ -232,13 +245,52 @@ CLEANUP:
 epcap_send(EPCAP_STATE *ep)
 {
     const int fd = STDIN_FILENO;
+    int maxfd = 0;
     ssize_t n = 0;
     unsigned char buf[SNAPLEN] = {0};
     u_int16_t len = 0;
 
+    int rv = 0;
+
     for ( ; ; ) {
+        fd_set rfds;
+
         if (child_exited)
             return;
+
+        FD_ZERO(&rfds);
+        FD_SET(fd, &rfds);
+
+#ifdef EPCAP_SANDBOX_capsicum
+        FD_SET(ep->pdfd, &rfds);
+        maxfd = MAX(fd, ep->pdfd) + 1;
+#else
+        maxfd = fd + 1;
+#endif
+
+        rv = select(maxfd, &rfds, NULL, NULL, NULL);
+
+        switch (rv) {
+            case 0:
+                continue;
+
+            case -1:
+                if (errno == EINTR)
+                    continue;
+
+                return;
+
+            default:
+                break;
+        }
+
+#ifdef EPCAP_SANDBOX_capsicum
+        if (FD_ISSET(ep->pdfd, &rfds))
+            return;
+#endif
+
+        if (!FD_ISSET(fd, &rfds))
+            continue;
 
         n = read_exact(fd, buf, sizeof(len));
 
