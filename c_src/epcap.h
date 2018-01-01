@@ -86,9 +86,7 @@ enum {
 
 typedef struct {
     pcap_t *p;          /* pcap handle */
-#ifdef EPCAP_SANDBOX_capsicum
-    int pdfd;           /* process descriptor for pcap process */
-#endif
+    int fdctl[2];       /* control descriptor for supervisor process */
     int datalink;       /* dlt */
     int opt;            /* options */
     int verbose;        /* debug messages */

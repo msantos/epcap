@@ -33,11 +33,13 @@
 #include <ei.h>
 
 #ifdef EPCAP_SANDBOX_capsicum
-#include <sys/param.h>
 #include <sys/procdesc.h>
 #endif
 
 #include "epcap.h"
+
+#define PIPE_READ 0
+#define PIPE_WRITE 1
 
 static int epcap_open(EPCAP_STATE *);
 static int epcap_init(EPCAP_STATE *);
@@ -50,8 +52,6 @@ static void gotsig(int);
 static ssize_t read_exact(int, void *, ssize_t);
 static void usage(EPCAP_STATE *);
 
-int child_exited = 0;
-
 extern char **environ;
 
     int
@@ -61,6 +61,9 @@ main(int argc, char *argv[])
     pid_t pid = 0;
     int ch = 0;
     int fd = 0;
+#ifdef EPCAP_SANDBOX_capsicum
+    int pdfd = 0;
+#endif
 
     ep = calloc(1, sizeof(EPCAP_STATE));
 
@@ -190,10 +193,11 @@ main(int argc, char *argv[])
     if (epcap_priv_drop(ep) < 0)
       exit(errno);
 
-    signal(SIGCHLD, gotsig);
+    if (pipe(ep->fdctl) < 0)
+      exit(errno);
 
 #ifdef EPCAP_SANDBOX_capsicum
-    pid = pdfork(&ep->pdfd, 0);
+    pid = pdfork(&pdfd, 0);
 #else
     pid = fork();
 #endif
@@ -205,6 +209,9 @@ main(int argc, char *argv[])
               exit(errno);
 
             if (close(fd) < 0)
+              exit(errno);
+
+            if (close(ep->fdctl[PIPE_READ]) < 0)
               exit(errno);
 
             if (epcap_init(ep) < 0)
@@ -220,6 +227,9 @@ main(int argc, char *argv[])
                 (close(fd) < 0))
                 goto CLEANUP;
 
+            if (close(ep->fdctl[PIPE_WRITE]) < 0)
+              exit(errno);
+
             if (!(ep->opt & EPCAP_OPT_INJECT))
                 pcap_close(ep->p);
 
@@ -230,7 +240,7 @@ main(int argc, char *argv[])
 
 CLEANUP:
 #ifdef EPCAP_SANDBOX_capsicum
-            (void)pdkill(ep->pdfd, SIGTERM);
+            (void)pdkill(pdfd, SIGTERM);
 #else
             (void)kill(pid, SIGTERM);
 #endif
@@ -255,18 +265,10 @@ epcap_send(EPCAP_STATE *ep)
     for ( ; ; ) {
         fd_set rfds;
 
-        if (child_exited)
-            return;
-
         FD_ZERO(&rfds);
         FD_SET(fd, &rfds);
-
-#ifdef EPCAP_SANDBOX_capsicum
-        FD_SET(ep->pdfd, &rfds);
-        maxfd = MAX(fd, ep->pdfd) + 1;
-#else
-        maxfd = fd + 1;
-#endif
+        FD_SET(ep->fdctl[PIPE_READ], &rfds);
+        maxfd = ep->fdctl[PIPE_READ] + 1;
 
         rv = select(maxfd, &rfds, NULL, NULL, NULL);
 
@@ -284,10 +286,8 @@ epcap_send(EPCAP_STATE *ep)
                 break;
         }
 
-#ifdef EPCAP_SANDBOX_capsicum
-        if (FD_ISSET(ep->pdfd, &rfds))
+        if (FD_ISSET(ep->fdctl[PIPE_READ], &rfds))
             return;
-#endif
 
         if (!FD_ISSET(fd, &rfds))
             continue;
@@ -528,18 +528,6 @@ read_exact(int fd, void *buf, ssize_t len)
     } while (got < len);
 
     return len;
-}
-
-    static void
-gotsig(int sig)
-{
-    switch (sig) {
-        case SIGCHLD:
-            child_exited = 1;
-            break;
-        default:
-            break;
-    }
 }
 
     static void
