@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2017, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2018, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,6 @@ static void epcap_ctrl(const char *);
 void epcap_response(u_char *, const struct pcap_pkthdr *, const u_char *);
 static void epcap_send_free(ei_x_buff *);
 static void epcap_send(EPCAP_STATE *);
-static void gotsig(int);
 static ssize_t read_exact(int, void *, ssize_t);
 static void usage(EPCAP_STATE *);
 
