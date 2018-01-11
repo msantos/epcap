@@ -41,6 +41,14 @@
 #define PIPE_READ 0
 #define PIPE_WRITE 1
 
+#ifdef HAVE_SETPROCTITLE
+#define EPCAP_TITLE_CAPTURE     "capture"
+#define EPCAP_TITLE_SUPERVISOR  "supervisor"
+#else
+#define EPCAP_TITLE_CAPTURE     "[epcap] capture"
+#define EPCAP_TITLE_SUPERVISOR  "[epcap] supervisor"
+#endif
+
 static int epcap_open(EPCAP_STATE *);
 static int epcap_init(EPCAP_STATE *);
 static void epcap_loop(EPCAP_STATE *);
@@ -62,6 +70,10 @@ main(int argc, char *argv[])
     int fd = 0;
 #ifdef EPCAP_SANDBOX_capsicum
     int pdfd = 0;
+#endif
+
+#ifndef HAVE_SETPROCTITLE
+    spt_init(argc, argv);
 #endif
 
     ep = calloc(1, sizeof(EPCAP_STATE));
@@ -213,6 +225,8 @@ main(int argc, char *argv[])
             if (close(ep->fdctl[PIPE_READ]) < 0)
               exit(errno);
 
+            setproctitle(EPCAP_TITLE_CAPTURE);
+
             if (epcap_init(ep) < 0)
               exit(errno);
 
@@ -231,6 +245,8 @@ main(int argc, char *argv[])
 
             if (!(ep->opt & EPCAP_OPT_INJECT))
                 pcap_close(ep->p);
+
+            setproctitle(EPCAP_TITLE_SUPERVISOR);
 
             if (epcap_sandbox_erl() < 0)
                 goto CLEANUP;

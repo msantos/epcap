@@ -113,3 +113,8 @@ int epcap_sandbox_erl();
 long long strtonum(const char *numstr, long long minval, long long maxval,
             const char **errstrp);
 #endif
+
+#ifndef HAVE_SETPROCTITLE
+void spt_init(int argc, char *argv[]);
+void setproctitle(const char *fmt, ...);
+#endif
