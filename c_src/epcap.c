@@ -495,7 +495,7 @@ epcap_response(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt)
 
     /* {MegaSec, Sec, MicroSec} */
     EPCAP_ENCODE_ERR(ei_x_encode_tuple_header(&msg, 3));
-    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, abs(hdr->ts.tv_sec / 1000000)));
+    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec / 1000000L));
     EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
     EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_usec));
 
