@@ -1,4 +1,4 @@
-%% Copyright (c) 2013-2017, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2013-2018, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ all() ->
   ].
 
 suite() ->
-  [{timetrap, {seconds, 10}}].
+  [{timetrap, {seconds, 60}}].
 
 init_per_testcase(_Test, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
