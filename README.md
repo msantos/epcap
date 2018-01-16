@@ -51,7 +51,8 @@ To compile the examples:
                 Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
                             {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
-                            {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()}
+                            {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()} |
+                            {time_unit, microsecond | timestamp}
 
         Packets are delivered as messages:
 
@@ -60,7 +61,9 @@ To compile the examples:
         The DataLinkType is an integer representing the link layer,
         e.g., ethernet, Linux cooked socket.
 
-        The Time is a tuple in the same format as erlang:now/0:
+        The Time can be either in microseconds or a timestamp in the same
+        format as erlang:now/0 depending on the value of the time_unit
+        option (default: timestamp):
 
         {MegaSecs, Secs, MicroSecs}
 

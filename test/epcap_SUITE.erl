@@ -41,17 +41,39 @@
     ]).
 -export([
         filter/1,
+        filter_with_microsecond/1,
         send/1
         ]).
 
 all() ->
   [
    filter,
+   filter_with_microsecond,
    send
   ].
 
 suite() ->
   [{timetrap, {seconds, 60}}].
+
+init_per_testcase(filter_with_microsecond, Config) ->
+    Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
+        false -> [];
+        N -> [{interface, N}]
+    end,
+
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+
+    % Solaris pcap using DLPI requires the interface to be in promiscuous
+    % mode for outgoing packets to be captured
+    {ok, Drv} = epcap:start(Dev ++ [
+            {time_unit, microsecond},
+            {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+            inject, {verbose, Verbose},
+            {filter, "tcp and ( port 29 or port 39 )"},
+            promiscuous
+        ]),
+
+		[{drv, Drv}|Config];
 
 init_per_testcase(_Test, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
@@ -80,7 +102,21 @@ filter(_Config) ->
     {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     receive
-        {packet, DataLinkType, Time, Length, Packet} ->
+        {packet, DataLinkType, {A,B,C} = Time, Length, Packet} when A > 0, B > 0, C > 0 ->
+            ct:pal(io_lib:format("~p", [[
+                    {dlt, DataLinkType},
+                    {time, Time},
+                    {length, Length},
+                    {packet, Packet}
+                ]])),
+            [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
+    end.
+
+filter_with_microsecond(_Config) ->
+    {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+
+    receive
+        {packet, DataLinkType, Time, Length, Packet} when Time > 0 ->
             ct:pal(io_lib:format("~p", [[
                     {dlt, DataLinkType},
                     {time, Time},

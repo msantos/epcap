@@ -49,6 +49,11 @@
 #define EPCAP_TITLE_SUPERVISOR  "[epcap] supervisor"
 #endif
 
+enum {
+    EPCAP_TIME_UNIT_TIMESTAMP = 0,
+    EPCAP_TIME_UNIT_MICROSECOND = 1
+};
+
 static int epcap_open(EPCAP_STATE *);
 static int epcap_init(EPCAP_STATE *);
 static void epcap_loop(EPCAP_STATE *);
@@ -84,7 +89,7 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:t:u:vX")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:u:vX")) != -1) {
         switch (ch) {
             case 'b':
                 ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
@@ -150,6 +155,11 @@ main(int argc, char *argv[])
                 break;
             case 's':
                 ep->snaplen = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
+                if (errno)
+                  exit(errno);
+                break;
+            case 'T':
+                ep->time_unit = strtonum(optarg, 0, 1, NULL);
                 if (errno)
                   exit(errno);
                 break;
@@ -493,11 +503,23 @@ epcap_response(u_char *user, const struct pcap_pkthdr *hdr, const u_char *pkt)
     /* DataLinkType */
     EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, ep->datalink));
 
-    /* {MegaSec, Sec, MicroSec} */
-    EPCAP_ENCODE_ERR(ei_x_encode_tuple_header(&msg, 3));
-    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec / 1000000L));
-    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
-    EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_usec));
+    switch (ep->time_unit) {
+        case EPCAP_TIME_UNIT_MICROSECOND:
+            /* microseconds */
+            EPCAP_ENCODE_ERR(ei_x_encode_ulonglong(&msg,
+                  (unsigned long long)hdr->ts.tv_sec * 1000000 +
+                  (unsigned long long)hdr->ts.tv_usec));
+            break;
+
+        case EPCAP_TIME_UNIT_TIMESTAMP:
+        default:
+            /* {MegaSec, Sec, MicroSec} */
+            EPCAP_ENCODE_ERR(ei_x_encode_tuple_header(&msg, 3));
+            EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec / 1000000L));
+            EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_sec % 1000000));
+            EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->ts.tv_usec));
+            break;
+    }
 
     /* ActualLength} */
     EPCAP_ENCODE_ERR(ei_x_encode_long(&msg, hdr->len));

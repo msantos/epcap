@@ -1,4 +1,4 @@
-%% Copyright (c) 2009-2015, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2009-2018, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,8 @@
          terminate/2, code_change/3]).
 
 -record(state, {pid :: pid(), port :: port()}).
+
+-type time_unit() :: timestamp | microsecond.
 
 -spec start() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start() ->
@@ -170,6 +172,7 @@ optarg({interface, Arg})    -> switch("i", Arg);
 optarg(monitor)             -> switch("M");
 optarg(promiscuous)         -> switch("P");
 optarg({snaplen, Arg})      -> switch("s", Arg);
+optarg({time_unit, Arg})    -> switch("T", time_unit(Arg));
 optarg({timeout, Arg})      -> switch("t", Arg);
 optarg({user, Arg})         -> switch("u", Arg);
 optarg(verbose)             -> switch("v");
@@ -232,3 +235,7 @@ timeout() ->
         {unix, linux} -> 0;
         _ -> 500
     end.
+
+-spec time_unit(time_unit()) -> 0 | 1.
+time_unit(timestamp) -> 0;
+time_unit(microsecond) -> 1.

@@ -92,6 +92,7 @@ typedef struct {
     int verbose;        /* debug messages */
     int snaplen;        /* packet capture length */
     int timeout;        /* capture timeout */
+    int time_unit;      /* microseconds, timestamp */
     int bufsz;          /* pcap buf size */
     char *filt;         /* packet filter */
     char *dev;          /* device to snoop */
