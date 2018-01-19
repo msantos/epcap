@@ -60,7 +60,7 @@ static void epcap_loop(EPCAP_STATE *);
 static void epcap_ctrl(const char *);
 void epcap_response(u_char *, const struct pcap_pkthdr *, const u_char *);
 static void epcap_send_free(ei_x_buff *);
-static void epcap_send(EPCAP_STATE *);
+static int epcap_send(EPCAP_STATE *);
 static ssize_t read_exact(int, void *, ssize_t);
 static void usage(EPCAP_STATE *);
 
@@ -261,7 +261,7 @@ main(int argc, char *argv[])
             if (epcap_sandbox_erl() < 0)
                 goto CLEANUP;
 
-            epcap_send(ep);
+            (void)epcap_send(ep);
 
 CLEANUP:
 #ifdef EPCAP_SANDBOX_capsicum
@@ -276,7 +276,7 @@ CLEANUP:
 }
 
 
-    static void
+    static int
 epcap_send(EPCAP_STATE *ep)
 {
     const int fd = STDIN_FILENO;
@@ -305,14 +305,14 @@ epcap_send(EPCAP_STATE *ep)
                 if (errno == EINTR)
                     continue;
 
-                return;
+                return -1;
 
             default:
                 break;
         }
 
         if (FD_ISSET(ep->fdctl[PIPE_READ], &rfds))
-            return;
+            return 0;
 
         if (!FD_ISSET(fd, &rfds))
             continue;
@@ -322,22 +322,25 @@ epcap_send(EPCAP_STATE *ep)
         if (n != sizeof(len)) {
             VERBOSE(1, "epcap_send: header len != %lu: %ld",
                     (unsigned long)sizeof(len), (long)n);
-            return;
+            return -1;
         }
 
         len = (buf[0] << 8) | buf[1];
 
         VERBOSE(2, "epcap_send: packet len = %u", len);
 
-        if (len >= sizeof(buf))
-            return;
+        if (len >= sizeof(buf)) {
+            errno = EINVAL;
+            return -1;
+        }
 
         n = read_exact(fd, buf, len);
 
         if (n != len) {
             VERBOSE(1, "epcap_send: len = %u, read = %ld",
                     len, (long)n);
-            return;
+            errno = EINVAL;
+            return -1;
         }
 
         if (ep->opt & EPCAP_OPT_INJECT) {
@@ -345,7 +348,7 @@ epcap_send(EPCAP_STATE *ep)
 
             if (n < 0) {
                 VERBOSE(0, "epcap_send: %s", pcap_geterr(ep->p));
-                return;
+                return -1;
             }
             else if (n != len) {
                 VERBOSE(1, "epcap_send: len = %u, sent = %ld",
@@ -356,6 +359,8 @@ epcap_send(EPCAP_STATE *ep)
             VERBOSE(2, "epcap_send: ignoring: len = %u", len);
         }
     }
+
+    return 0;
 }
 
 
