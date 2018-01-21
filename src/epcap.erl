@@ -92,7 +92,17 @@ init([Pid, Options]) ->
             ), ".")),
     Cmd = string:join(getopts(Options1), " "),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
-    {ok, #state{pid = Pid, port = Port}}.
+
+    % Block until the port has fully initialized
+    receive
+        {Port, {data, Data}} ->
+            {epcap, ready} = binary_to_term(Data),
+            {ok, #state{pid = Pid, port = Port}};
+        {'EXIT', Port, normal} ->
+            {stop, {error, port_init_failed}};
+        {'EXIT', Port, Reason} ->
+            {stop, {error, Reason}}
+    end.
 
 handle_call({send, Packet}, _From, #state{port = Port} = State) ->
     Reply = try erlang:port_command(Port, Packet) of

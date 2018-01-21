@@ -243,6 +243,7 @@ main(int argc, char *argv[])
             if (epcap_sandbox_pcap() < 0)
               exit(errno);
 
+            epcap_ctrl("ready");
             epcap_loop(ep);
             break;
         default:
