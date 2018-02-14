@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2015, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2018, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,16 +29,16 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include "epcap.h"
 #include <pwd.h>
 #include <grp.h>
-
-#include "epcap.h"
 
     int
 epcap_priv_drop(EPCAP_STATE *ep)
 {
     struct passwd *pw = NULL;
     struct group *gr = NULL;
+    gid_t gid;
 
     if (geteuid() != 0)
         return 1;
@@ -61,14 +61,24 @@ epcap_priv_drop(EPCAP_STATE *ep)
     if (chdir("/") < 0)
       return -1;
 
-    if (setgid(ep->group ? gr->gr_gid : pw->pw_gid) < 0)
+    if (setgroups(0, NULL) < 0)
       return -1;
 
-    if (setgroups(0, NULL) < 0)
+    gid = ep->group ? gr->gr_gid : pw->pw_gid;
+
+#if defined(__sunos__)
+    if (setgid(gid) < 0)
       return -1;
 
     if (setuid(pw->pw_uid) < 0)
       return -1;
+#else
+    if (setresgid(gid, gid, gid) < 0)
+      return -1;
+
+    if (setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid) < 0)
+      return -1;
+#endif
 
     return 0;
 }
@@ -77,14 +87,31 @@ epcap_priv_drop(EPCAP_STATE *ep)
     int
 epcap_priv_runasuser(EPCAP_STATE *ep)
 {
+    uid_t uid;
+    gid_t gid;
+
+    uid = getuid();
+    gid = getgid();
+
     if ( !(ep->opt & EPCAP_OPT_RUNASUSER) || (geteuid() != 0))
       return 0;
 
+    if (setgroups(0, NULL) < 0)
+      return -1;
+
+#if defined(__sunos__)
     if (setgid(getgid()) < 0)
       return -1;
 
     if (setuid(getuid()) < 0)
       return -1;
+#else
+    if (setresgid(gid, gid, gid) < 0)
+      return -1;
+
+    if (setresuid(uid, uid, uid) < 0)
+      return -1;
+#endif
 
     return 0;
 }
