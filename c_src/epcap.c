@@ -318,7 +318,7 @@ epcap_send(EPCAP_STATE *ep)
         if (!FD_ISSET(fd, &rfds))
             continue;
 
-        n = read_exact(fd, buf, sizeof(len));
+        n = read_exact(fd, &len, sizeof(len));
 
         if (n != sizeof(len)) {
             VERBOSE(1, "epcap_send: header len != %lu: %ld",
@@ -326,7 +326,7 @@ epcap_send(EPCAP_STATE *ep)
             return -1;
         }
 
-        len = (buf[0] << 8) | buf[1];
+        len = ntohs(len);
 
         VERBOSE(2, "epcap_send: packet len = %u", len);
 
