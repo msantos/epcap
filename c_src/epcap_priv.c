@@ -66,7 +66,7 @@ epcap_priv_drop(EPCAP_STATE *ep)
 
     gid = ep->group ? gr->gr_gid : pw->pw_gid;
 
-#if defined(__sunos__)
+#if defined(__sunos__) || defined(__APPLE__)
     if (setgid(gid) < 0)
       return -1;
 
@@ -99,7 +99,7 @@ epcap_priv_runasuser(EPCAP_STATE *ep)
     if (setgroups(0, NULL) < 0)
       return -1;
 
-#if defined(__sunos__)
+#if defined(__sunos__) || defined(__APPLE__)
     if (setgid(getgid()) < 0)
       return -1;
 
