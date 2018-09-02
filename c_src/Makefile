@@ -24,6 +24,7 @@ else ifeq ($(UNAME_SYS), FreeBSD)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
 	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	EPCAP_SANDBOX ?= capsicum
 else ifeq ($(UNAME_SYS), OpenBSD)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-z,relro,-z,now
