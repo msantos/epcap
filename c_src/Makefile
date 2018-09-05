@@ -33,17 +33,19 @@ else ifeq ($(UNAME_SYS), OpenBSD)
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
-	CFLAGS ?= -DEPCAP_RLIMIT_NOFILES=1 -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
 	EPCAP_SANDBOX ?= seccomp
 else ifeq ($(UNAME_SYS), SunOS)
-	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1 -DEPCAP_RLIMIT_NOFILES=1
+	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1
 endif
 
 EPCAP_SANDBOX ?= rlimit
+EPCAP_RLIMIT_NOFILES ?= 1
 
 EPCAP_CFLAGS ?= -g -Wall -fwrapv
 CFLAGS += $(EPCAP_CFLAGS) $(EPCAP_DEFINE) -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) \
-          -DEPCAP_SANDBOX=\"$(EPCAP_SANDBOX)\" -DEPCAP_SANDBOX_$(EPCAP_SANDBOX)
+          -DEPCAP_SANDBOX=\"$(EPCAP_SANDBOX)\" -DEPCAP_SANDBOX_$(EPCAP_SANDBOX) \
+					-DEPCAP_RLIMIT_NOFILES=$(EPCAP_RLIMIT_NOFILES)
 
 LDLIBS += -lpcap -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
 LDFLAGS += $(EPCAP_LDFLAGS)
