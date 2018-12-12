@@ -34,7 +34,6 @@ else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
 	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
-	EPCAP_SANDBOX ?= seccomp
 else ifeq ($(UNAME_SYS), SunOS)
 	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1
 endif
