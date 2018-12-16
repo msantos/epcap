@@ -103,6 +103,9 @@ epcap_sandbox_pcap()
 
         /* Syscalls to allow */
 
+#ifdef __NR_brk
+        SC_ALLOW(brk),
+#endif
 #ifdef __NR_recvfrom
         SC_ALLOW(recvfrom),
 #endif
