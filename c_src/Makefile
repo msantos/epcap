@@ -19,21 +19,35 @@ UNAME_SYS := $(shell uname -s)
 ifeq ($(UNAME_SYS), Darwin)
 	CC ?= cc
         LDFLAGS ?= -Wno-missing-braces
-        CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+        CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
+								 	-Wformat -Werror=format-security \
+								 	-fno-strict-aliasing \
+								 	-pie -fPIE
 else ifeq ($(UNAME_SYS), FreeBSD)
 	CC ?= cc
-	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
-	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now -Wl,-z,noexecstack
+	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM \
+					 	-D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
+					 	-Wformat -Werror=format-security \
+					 	-fno-strict-aliasing \
+					 	-pie -fPIE
 	EPCAP_SANDBOX ?= capsicum
 else ifeq ($(UNAME_SYS), OpenBSD)
 	CC ?= cc
-	LDFLAGS ?= -Wl,-z,relro,-z,now
-	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	LDFLAGS ?= -Wl,-z,relro,-z,now -Wl,-z,noexecstack
+	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM \
+					 	-D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
+					 	-Wformat -Werror=format-security \
+					 	-fno-strict-aliasing \
+					 	-pie -fPIE
 	EPCAP_SANDBOX ?= pledge
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
-	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now
-	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong -Wformat -Werror=format-security -fno-strict-aliasing
+	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now -Wl,-z,noexecstack
+	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
+					 	-Wformat -Werror=format-security \
+					 	-fno-strict-aliasing \
+					 	-pie -fPIE
 else ifeq ($(UNAME_SYS), SunOS)
 	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1
 endif
