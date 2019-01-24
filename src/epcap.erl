@@ -84,7 +84,8 @@ init([Pid, Options]) ->
     process_flag(trap_exit, true),
     Options1 = setopts([
             {chroot, filename:join([basedir(), "tmp"])},
-            {timeout, timeout()}
+            {timeout, timeout()},
+            {direction, inout}
         ], Options),
     ok = filelib:ensure_dir(filename:join(proplists:get_value(
                 chroot,
@@ -189,6 +190,7 @@ optarg(verbose)             -> switch("v");
 optarg({verbose, 0})        -> "";
 optarg({verbose, Arg})      -> switch(string:copies("v", Arg));
 optarg(inject)              -> switch("X");
+optarg({direction, Arg})    -> switch("Q", atom_to_list(Arg));
 optarg(_)                   -> "".
 
 switch(Switch) ->

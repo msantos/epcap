@@ -89,7 +89,7 @@ main(int argc, char *argv[])
     ep->snaplen = SNAPLEN;
     ep->timeout = TIMEOUT;
 
-    while ( (ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:u:vX")) != -1) {
+    while ( (ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:u:Q:vX")) != -1) {
         switch (ch) {
             case 'b':
                 ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
@@ -180,6 +180,17 @@ main(int argc, char *argv[])
                 break;
             case 'X':
                 ep->opt |= EPCAP_OPT_INJECT;
+                break;
+            case 'Q':
+                if (strcmp(optarg, "in") == 0) {
+                    ep->direction = PCAP_D_IN;
+                }
+                else if (strcmp(optarg, "out") == 0) {
+                    ep->direction = PCAP_D_OUT;
+                }
+                else {
+                    ep->direction = PCAP_D_INOUT;
+                }
                 break;
             case 'h':
             default:
@@ -425,6 +436,11 @@ epcap_open(EPCAP_STATE *ep)
 
     ep->datalink = pcap_datalink(ep->p);
 
+    if (pcap_setdirection(ep->p, ep->direction) != 0) {
+        VERBOSE(1, "pcap_setdirection: %s", pcap_geterr(ep->p));
+        return -1;
+    }
+
     return 0;
 }
 
@@ -573,7 +589,7 @@ read_exact(int fd, void *buf, ssize_t len)
     return len;
 }
 
-    static void
+static void
 usage(EPCAP_STATE *ep)
 {
     (void)fprintf(stderr, "%s, %s (using %s sandbox)\n", __progname,
@@ -596,7 +612,8 @@ usage(EPCAP_STATE *ep)
             "              -t <millisecond> capture timeout\n"
             "              -e <key>=<val>   set an environment variable\n"
             "              -v               verbose mode\n"
-            "              -X               enable sending packets\n",
+            "              -X               enable sending packets\n"
+            "              -Q               capture direction\n",
             __progname
             );
 
