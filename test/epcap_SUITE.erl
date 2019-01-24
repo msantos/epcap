@@ -42,6 +42,8 @@
 -export([
         filter/1,
         filter_with_microsecond/1,
+        filter_with_outbound/1,
+        filter_with_inbound/1,
         send/1
         ]).
 
@@ -49,6 +51,8 @@ all() ->
   [
    filter,
    filter_with_microsecond,
+   filter_with_outbound,
+   filter_with_inbound,
    send
   ].
 
@@ -72,6 +76,48 @@ init_per_testcase(filter_with_microsecond, Config) ->
             {filter, "tcp and ( port 29 or port 39 )"},
             promiscuous
         ]),
+
+		[{drv, Drv}|Config];
+
+init_per_testcase(filter_with_outbound, Config) ->
+    Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
+              false -> [];
+              N -> [{interface, N}]
+          end,
+
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+
+                                                % Solaris pcap using DLPI requires the interface to be in promiscuous
+                                                % mode for outgoing packets to be captured
+    {ok, Drv} = epcap:start(Dev ++ [
+                                    {time_unit, microsecond},
+                                    {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                    inject, {verbose, Verbose},
+                                    {filter, "tcp and ( port 29 or port 39 )"},
+                                    {direction, out},
+                                    promiscuous
+                                   ]),
+
+		[{drv, Drv}|Config];
+
+init_per_testcase(filter_with_inbound, Config) ->
+    Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
+              false -> [];
+              N -> [{interface, N}]
+          end,
+
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+
+                                                % Solaris pcap using DLPI requires the interface to be in promiscuous
+                                                % mode for outgoing packets to be captured
+    {ok, Drv} = epcap:start(Dev ++ [
+                                    {time_unit, microsecond},
+                                    {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                    inject, {verbose, Verbose},
+                                    {filter, "tcp and ( port 29 or port 39 )"},
+                                    {direction, in},
+                                    promiscuous
+                                   ]),
 
 		[{drv, Drv}|Config];
 
@@ -99,7 +145,7 @@ end_per_testcase(_Test, Config) ->
     epcap:stop(Drv).
 
 filter(_Config) ->
-    {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+    {error, _Reason} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     receive
         {packet, DataLinkType, {A,B,C} = Time, Length, Packet} when A > 0, B > 0, C > 0 ->
@@ -113,7 +159,7 @@ filter(_Config) ->
     end.
 
 filter_with_microsecond(_Config) ->
-    {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+    {error, _} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     receive
         {packet, DataLinkType, Time, Length, Packet} when Time > 0 ->
@@ -126,10 +172,35 @@ filter_with_microsecond(_Config) ->
             [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
     end.
 
+filter_with_outbound(_Config) ->
+    {error, _} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+
+    receive
+        {packet, DataLinkType, Time, Length, Packet} when Time > 0 ->
+            ct:pal(io_lib:format("~p", [[
+                                         {dlt, DataLinkType},
+                                         {time, Time},
+                                         {length, Length},
+                                         {packet, Packet}
+                                        ]])),
+            [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
+    end.
+
+filter_with_inbound(_Config) ->
+    {error, _} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+
+    receive
+        fail_when_some_received ->
+            ok
+    after
+        1000 ->
+            ok
+    end.
+
 send(Config) ->
     Drv = ?config(drv, Config),
 
-    {error, timeout} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
+    {error, _} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     Frame = receive
         {packet, _DataLinkType, _Time, _Length, Packet} ->
@@ -161,7 +232,7 @@ send_1() ->
                     ]])),
                     ok;
                 % TCP SYN retries
-                [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] ->
+                [#ether{}, #ipv4{}, #tcp{sport = 29}, _Payload] ->
                     send_1()
             end
     end.

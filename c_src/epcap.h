@@ -95,6 +95,7 @@ typedef struct {
     int timeout;        /* capture timeout */
     int time_unit;      /* microseconds, timestamp */
     int bufsz;          /* pcap buf size */
+    int direction;      /* capture direction */
     char *filt;         /* packet filter */
     char *dev;          /* device to snoop */
     char *user;         /* run as unprivileged user */
