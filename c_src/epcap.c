@@ -436,7 +436,7 @@ epcap_open(EPCAP_STATE *ep)
 
     ep->datalink = pcap_datalink(ep->p);
 
-    if (pcap_setdirection(ep->p, ep->direction) != 0) {
+    if (ep->file == 0 && pcap_setdirection(ep->p, ep->direction) != 0) {
         VERBOSE(1, "pcap_setdirection: %s", pcap_geterr(ep->p));
         return -1;
     }
