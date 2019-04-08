@@ -382,21 +382,27 @@ epcap_open(EPCAP_STATE *ep)
     if (ep->file) {
         ep->p = pcap_open_offline(ep->file, ep->errbuf);
 
-        if (ep->p == NULL)
+        if (ep->p == NULL) {
+          VERBOSE(0, "%s, failed call to pcap_open_offline %s\n", __progname, ep->errbuf);
           return -1;
+        }
     } else {
         if (ep->dev == NULL) {
             ep->dev = pcap_lookupdev(ep->errbuf);
 
-            if (ep->dev == NULL)
+            if (ep->dev == NULL) {
+              VERBOSE(0, "%s, failed call to pcap_lookupdev %s\n", __progname, ep->errbuf);
               return -1;
+            }
         }
 
 #ifdef HAVE_PCAP_CREATE
         ep->p = pcap_create(ep->dev, ep->errbuf);
 
-        if (ep->p == NULL)
+        if (ep->p == NULL){
+          VERBOSE(0, "%s, failed call to pcap_create %s\n", __progname, ep->errbuf);
           return -1;
+        }
 
         (void)pcap_set_snaplen(ep->p, ep->snaplen);
         (void)pcap_set_promisc(ep->p, ep->opt & EPCAP_OPT_PROMISC);
@@ -423,8 +429,10 @@ epcap_open(EPCAP_STATE *ep)
         ep->p = pcap_open_live(ep->dev, ep->snaplen,
             ep->opt & EPCAP_OPT_PROMISC, ep->timeout, ep->errbuf);
 
-        if (ep->p == NULL)
+        if (ep->p == NULL){
+          VERBOSE(0, "%s, failed call to pcap_open_live %s\n", __progname, ep->errbuf);
           return -1;
+        }
 #endif
 
         /* monitor mode */
@@ -437,7 +445,7 @@ epcap_open(EPCAP_STATE *ep)
     ep->datalink = pcap_datalink(ep->p);
 
     if (ep->file == 0 && pcap_setdirection(ep->p, ep->direction) != 0) {
-        VERBOSE(1, "pcap_setdirection: %s", pcap_geterr(ep->p));
+        VERBOSE(1, "pcap_setdirection: %s (%d)", pcap_geterr(ep->p), ep->direction);
         return -1;
     }
 
