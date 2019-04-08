@@ -59,9 +59,11 @@ start(Pid, Options) when is_pid(Pid), is_list(Options) ->
 -spec start_link() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link() ->
     start_link(self(), []).
+
 -spec start_link(proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link(Options) ->
     start_link(self(), Options).
+
 -spec start_link(pid(),proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link(Pid, Options) ->
     gen_server:start_link(?MODULE, [Pid, Options], []).
@@ -135,15 +137,18 @@ handle_info({Port, {data, Data}}, #state{port = Port, pid = Pid} = State) ->
     Pid ! binary_to_term(Data),
     {noreply, State};
 
-handle_info({Port, {exit_status, Status}}, #state{port = Port} = State) when Status > 128 ->
-    {stop, {port_terminated, Status-128}, State};
-handle_info({Port, {exit_status, Status}}, #state{port = Port} = State) ->
-    {stop, {port_terminated, Status}, #state{port = Port} = State};
 handle_info({'EXIT', Port, Reason}, #state{port = Port} = State) ->
     {stop, {shutdown, Reason}, State};
-
-% WTF
-handle_info(Info, State) ->
+handle_info({Port, {exit_status, Status}}, #state{port = Port} = State) ->
+    case Status of
+        0 ->
+            {stop, normal, State};
+        _ when  128 < Status ->
+            {stop, {port_terminated, Status-128}, State};
+        _ ->
+            {stop, {port_terminated, Status}, State}
+    end;
+handle_info(Info, State) ->  %% WTF
     error_logger:error_report([{wtf, Info}]),
     {noreply, State}.
 
