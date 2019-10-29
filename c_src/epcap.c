@@ -480,8 +480,9 @@ epcap_init(EPCAP_STATE *ep)
         return -1;
     }
 
-    return 0;
+    pcap_freecode(&fcode);
 
+    return 0;
 }
 
 
