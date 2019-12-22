@@ -30,19 +30,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef EPCAP_SANDBOX_pledge
+#ifdef RESTRICT_PROCESS_pledge
 
 #include <unistd.h>
 #include "epcap.h"
 
     int
-epcap_sandbox_pcap()
+epcap_restrict_process_pcap()
 {
     return pledge("stdio", NULL);
 }
 
     int
-epcap_sandbox_erl()
+epcap_restrict_process_erl()
 {
     return pledge("stdio proc", NULL);
 }

@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef EPCAP_SANDBOX_rlimit
+#ifdef RESTRICT_PROCESS_rlimit
 
 #include "epcap.h"
 
@@ -42,7 +42,7 @@
 #endif
 
     int
-epcap_sandbox_pcap()
+epcap_restrict_process_pcap()
 {
     struct rlimit rl = {0};
 
@@ -62,7 +62,7 @@ epcap_sandbox_pcap()
 }
 
     int
-epcap_sandbox_erl()
+epcap_restrict_process_erl()
 {
     struct rlimit rl = {0};
 

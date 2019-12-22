@@ -31,7 +31,7 @@ else ifeq ($(UNAME_SYS), FreeBSD)
 					 	-Wformat -Werror=format-security \
 					 	-fno-strict-aliasing \
 					 	-pie -fPIE
-	EPCAP_SANDBOX ?= capsicum
+	RESTRICT_PROCESS ?= capsicum
 else ifeq ($(UNAME_SYS), OpenBSD)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-z,relro,-z,now -Wl,-z,noexecstack
@@ -40,7 +40,7 @@ else ifeq ($(UNAME_SYS), OpenBSD)
 					 	-Wformat -Werror=format-security \
 					 	-fno-strict-aliasing \
 					 	-pie -fPIE
-	EPCAP_SANDBOX ?= pledge
+	RESTRICT_PROCESS ?= pledge
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now -Wl,-z,noexecstack
@@ -52,12 +52,12 @@ else ifeq ($(UNAME_SYS), SunOS)
 	CFLAGS += -std=c99 -D_POSIX_C_SOURCE=200112L -D__EXTENSIONS__=1
 endif
 
-EPCAP_SANDBOX ?= rlimit
+RESTRICT_PROCESS ?= rlimit
 EPCAP_RLIMIT_NOFILES ?= 1
 
 EPCAP_CFLAGS ?= -g -Wall -fwrapv
 CFLAGS += $(EPCAP_CFLAGS) $(EPCAP_DEFINE) -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) \
-          -DEPCAP_SANDBOX=\"$(EPCAP_SANDBOX)\" -DEPCAP_SANDBOX_$(EPCAP_SANDBOX) \
+          -DRESTRICT_PROCESS=\"$(RESTRICT_PROCESS)\" -DRESTRICT_PROCESS_$(RESTRICT_PROCESS) \
 					-DEPCAP_RLIMIT_NOFILES=$(EPCAP_RLIMIT_NOFILES)
 
 LDLIBS += -lpcap -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei

@@ -32,7 +32,7 @@
 #include <stdint.h>
 #include <ei.h>
 
-#ifdef EPCAP_SANDBOX_capsicum
+#ifdef RESTRICT_PROCESS_capsicum
 #include <sys/procdesc.h>
 #endif
 
@@ -73,7 +73,7 @@ main(int argc, char *argv[])
     pid_t pid = 0;
     int ch = 0;
     int fd = 0;
-#ifdef EPCAP_SANDBOX_capsicum
+#ifdef RESTRICT_PROCESS_capsicum
     int pdfd = 0;
 #endif
 
@@ -228,7 +228,7 @@ main(int argc, char *argv[])
     if (pipe(ep->fdctl) < 0)
       exit(errno);
 
-#ifdef EPCAP_SANDBOX_capsicum
+#ifdef RESTRICT_PROCESS_capsicum
     pid = pdfork(&pdfd, 0);
 #else
     pid = fork();
@@ -251,7 +251,7 @@ main(int argc, char *argv[])
             if (epcap_init(ep) < 0)
               exit(errno);
 
-            if (epcap_sandbox_pcap() < 0)
+            if (epcap_restrict_process_pcap() < 0)
               exit(errno);
 
             epcap_ctrl("ready");
@@ -270,13 +270,13 @@ main(int argc, char *argv[])
 
             setproctitle(EPCAP_TITLE_SUPERVISOR);
 
-            if (epcap_sandbox_erl() < 0)
+            if (epcap_restrict_process_erl() < 0)
                 goto CLEANUP;
 
             (void)epcap_send(ep);
 
 CLEANUP:
-#ifdef EPCAP_SANDBOX_capsicum
+#ifdef RESTRICT_PROCESS_capsicum
             (void)pdkill(pdfd, SIGTERM);
 #else
             (void)kill(pid, SIGTERM);
@@ -601,8 +601,8 @@ read_exact(int fd, void *buf, ssize_t len)
 static void
 usage(EPCAP_STATE *ep)
 {
-    (void)fprintf(stderr, "%s, %s (using %s sandbox)\n", __progname,
-            EPCAP_VERSION, EPCAP_SANDBOX);
+    (void)fprintf(stderr, "%s, %s (using %s process restriction)\n", __progname,
+            EPCAP_VERSION, RESTRICT_PROCESS);
     (void)fprintf(stderr,
             "usage: %s <options>\n"
             "              -d <directory>   chroot directory\n"

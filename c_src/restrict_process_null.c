@@ -30,16 +30,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef EPCAP_SANDBOX_null
+#ifdef RESTRICT_PROCESS_null
 
     int
-epcap_sandbox_pcap()
+epcap_restrict_process_pcap()
 {
     return 0;
 }
 
     int
-epcap_sandbox_erl()
+epcap_restrict_process_erl()
 {
     return 0;
 }

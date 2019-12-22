@@ -29,7 +29,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifdef EPCAP_SANDBOX_seccomp
+#ifdef RESTRICT_PROCESS_seccomp
 #include <stddef.h>
 #include <errno.h>
 #include <sys/syscall.h>
@@ -40,14 +40,14 @@
 
 /* macros from openssh-7.2/sandbox-seccomp-filter.c */
 
-/* Linux seccomp_filter sandbox */
+/* Linux seccomp_filter restrict_process */
 #define SECCOMP_FILTER_FAIL SECCOMP_RET_KILL
 
 /* Use a signal handler to emit violations when debugging */
-#ifdef SANDBOX_SECCOMP_FILTER_DEBUG
+#ifdef RESTRICT_PROCESS_SECCOMP_FILTER_DEBUG
 # undef SECCOMP_FILTER_FAIL
 # define SECCOMP_FILTER_FAIL SECCOMP_RET_TRAP
-#endif /* SANDBOX_SECCOMP_FILTER_DEBUG */
+#endif /* RESTRICT_PROCESS_SECCOMP_FILTER_DEBUG */
 
 /* Simple helpers to avoid manual errors (but larger BPF programs). */
 #define SC_DENY(_nr, _errno) \
@@ -89,7 +89,7 @@
 #endif
 
     int
-epcap_sandbox_pcap()
+epcap_restrict_process_pcap()
 {
     struct sock_filter filter[] = {
         /* Ensure the syscall arch convention is as expected. */
@@ -155,7 +155,7 @@ epcap_sandbox_pcap()
 }
 
     int
-epcap_sandbox_erl()
+epcap_restrict_process_erl()
 {
     struct sock_filter filter[] = {
         /* Ensure the syscall arch convention is as expected. */

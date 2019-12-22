@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef EPCAP_SANDBOX_capsicum
+#ifdef RESTRICT_PROCESS_capsicum
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -45,7 +45,7 @@
 #include "epcap.h"
 
     int
-epcap_sandbox_pcap()
+epcap_restrict_process_pcap()
 {
     struct rlimit rl = {0};
     cap_rights_t policy_read;
@@ -85,7 +85,7 @@ epcap_sandbox_pcap()
 }
 
     int
-epcap_sandbox_erl()
+epcap_restrict_process_erl()
 {
     struct rlimit rl = {0};
     cap_rights_t policy_read;
