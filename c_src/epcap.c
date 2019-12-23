@@ -251,7 +251,7 @@ main(int argc, char *argv[])
             if (epcap_init(ep) < 0)
               exit(errno);
 
-            if (epcap_restrict_process_pcap() < 0)
+            if (restrict_process_pcap() < 0)
               exit(errno);
 
             epcap_ctrl("ready");
@@ -270,7 +270,7 @@ main(int argc, char *argv[])
 
             setproctitle(EPCAP_TITLE_SUPERVISOR);
 
-            if (epcap_restrict_process_erl() < 0)
+            if (restrict_process_erl() < 0)
                 goto CLEANUP;
 
             (void)epcap_send(ep);

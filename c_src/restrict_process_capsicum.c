@@ -45,7 +45,7 @@
 #include "epcap.h"
 
     int
-epcap_restrict_process_pcap()
+restrict_process_pcap()
 {
     struct rlimit rl = {0};
     cap_rights_t policy_read;
@@ -85,7 +85,7 @@ epcap_restrict_process_pcap()
 }
 
     int
-epcap_restrict_process_erl()
+restrict_process_erl()
 {
     struct rlimit rl = {0};
     cap_rights_t policy_read;

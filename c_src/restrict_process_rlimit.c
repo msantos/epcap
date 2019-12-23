@@ -42,7 +42,7 @@
 #endif
 
     int
-epcap_restrict_process_pcap()
+restrict_process_pcap()
 {
     struct rlimit rl = {0};
 
@@ -62,7 +62,7 @@ epcap_restrict_process_pcap()
 }
 
     int
-epcap_restrict_process_erl()
+restrict_process_erl()
 {
     struct rlimit rl = {0};
 

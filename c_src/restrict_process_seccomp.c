@@ -89,7 +89,7 @@
 #endif
 
     int
-epcap_restrict_process_pcap()
+restrict_process_pcap()
 {
     struct sock_filter filter[] = {
         /* Ensure the syscall arch convention is as expected. */
@@ -155,7 +155,7 @@ epcap_restrict_process_pcap()
 }
 
     int
-epcap_restrict_process_erl()
+restrict_process_erl()
 {
     struct sock_filter filter[] = {
         /* Ensure the syscall arch convention is as expected. */

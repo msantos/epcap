@@ -33,13 +33,13 @@
 #ifdef RESTRICT_PROCESS_null
 
     int
-epcap_restrict_process_pcap()
+restrict_process_pcap()
 {
     return 0;
 }
 
     int
-epcap_restrict_process_erl()
+restrict_process_erl()
 {
     return 0;
 }

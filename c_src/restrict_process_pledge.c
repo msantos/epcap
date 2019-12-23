@@ -36,13 +36,13 @@
 #include "epcap.h"
 
     int
-epcap_restrict_process_pcap()
+restrict_process_pcap()
 {
     return pledge("stdio", NULL);
 }
 
     int
-epcap_restrict_process_erl()
+restrict_process_erl()
 {
     return pledge("stdio proc", NULL);
 }
