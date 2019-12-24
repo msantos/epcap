@@ -32,18 +32,10 @@
 
 #ifdef RESTRICT_PROCESS_pledge
 
-#include <unistd.h>
 #include "epcap.h"
+#include <unistd.h>
 
-    int
-restrict_process_pcap()
-{
-    return pledge("stdio", NULL);
-}
+int restrict_process_pcap() { return pledge("stdio", NULL); }
 
-    int
-restrict_process_erl()
-{
-    return pledge("stdio proc", NULL);
-}
+int restrict_process_erl() { return pledge("stdio proc", NULL); }
 #endif

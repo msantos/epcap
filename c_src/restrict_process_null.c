@@ -32,15 +32,7 @@
 
 #ifdef RESTRICT_PROCESS_null
 
-    int
-restrict_process_pcap()
-{
-    return 0;
-}
+int restrict_process_pcap() { return 0; }
 
-    int
-restrict_process_erl()
-{
-    return 0;
-}
+int restrict_process_erl() { return 0; }
 #endif

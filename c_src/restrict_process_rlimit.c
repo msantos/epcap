@@ -41,40 +41,36 @@
 #warning "Using default value of EPCAP_RLIMIT_NOFILES=0"
 #endif
 
-    int
-restrict_process_pcap()
-{
-    struct rlimit rl = {0};
+int restrict_process_pcap() {
+  struct rlimit rl = {0};
 
-    if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
-        return -1;
+  if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
+    return -1;
 
-    if (setrlimit(RLIMIT_NPROC, &rl) != 0)
-        return -1;
+  if (setrlimit(RLIMIT_NPROC, &rl) != 0)
+    return -1;
 
-    rl.rlim_cur = EPCAP_RLIMIT_NOFILES;
-    rl.rlim_max = EPCAP_RLIMIT_NOFILES;
+  rl.rlim_cur = EPCAP_RLIMIT_NOFILES;
+  rl.rlim_max = EPCAP_RLIMIT_NOFILES;
 
-    if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
-        return -1;
+  if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+    return -1;
 
-    return 0;
+  return 0;
 }
 
-    int
-restrict_process_erl()
-{
-    struct rlimit rl = {0};
+int restrict_process_erl() {
+  struct rlimit rl = {0};
 
-    if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
-        return -1;
+  if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
+    return -1;
 
-    if (setrlimit(RLIMIT_NPROC, &rl) != 0)
-        return -1;
+  if (setrlimit(RLIMIT_NPROC, &rl) != 0)
+    return -1;
 
-    if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
-        return -1;
+  if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+    return -1;
 
-    return 0;
+  return 0;
 }
 #endif

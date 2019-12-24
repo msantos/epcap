@@ -30,88 +30,83 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include "epcap.h"
-#include <pwd.h>
 #include <grp.h>
+#include <pwd.h>
 
-    int
-epcap_priv_drop(EPCAP_STATE *ep)
-{
-    struct passwd *pw = NULL;
-    struct group *gr = NULL;
-    gid_t gid;
+int epcap_priv_drop(EPCAP_STATE *ep) {
+  struct passwd *pw = NULL;
+  struct group *gr = NULL;
+  gid_t gid;
 
-    if (geteuid() != 0)
-        return 1;
+  if (geteuid() != 0)
+    return 1;
 
-    if (!ep->user)
-        ep->user = EPCAP_USER;
+  if (!ep->user)
+    ep->user = EPCAP_USER;
 
-    if (!ep->chroot)
-        ep->chroot = EPCAP_CHROOT;
+  if (!ep->chroot)
+    ep->chroot = EPCAP_CHROOT;
 
-    if ( (pw = getpwnam(ep->user)) == NULL)
-        return -1;
+  if ((pw = getpwnam(ep->user)) == NULL)
+    return -1;
 
-    if (ep->group && (gr = getgrnam(ep->group)) == NULL)
-        return -1;
+  if (ep->group && (gr = getgrnam(ep->group)) == NULL)
+    return -1;
 
-    if (chroot(ep->chroot) < 0)
-        return -1;
+  if (chroot(ep->chroot) < 0)
+    return -1;
 
-    if (chdir("/") < 0)
-      return -1;
+  if (chdir("/") < 0)
+    return -1;
 
-    if (setgroups(0, NULL) < 0)
-      return -1;
+  if (setgroups(0, NULL) < 0)
+    return -1;
 
-    gid = ep->group ? gr->gr_gid : pw->pw_gid;
+  gid = ep->group ? gr->gr_gid : pw->pw_gid;
 
 #if defined(__sunos__) || defined(__APPLE__)
-    if (setgid(gid) < 0)
-      return -1;
+  if (setgid(gid) < 0)
+    return -1;
 
-    if (setuid(pw->pw_uid) < 0)
-      return -1;
+  if (setuid(pw->pw_uid) < 0)
+    return -1;
 #else
-    if (setresgid(gid, gid, gid) < 0)
-      return -1;
+  if (setresgid(gid, gid, gid) < 0)
+    return -1;
 
-    if (setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid) < 0)
-      return -1;
+  if (setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid) < 0)
+    return -1;
 #endif
 
-    return 0;
+  return 0;
 }
 
+int epcap_priv_runasuser(EPCAP_STATE *ep) {
+  uid_t uid;
+  gid_t gid;
 
-    int
-epcap_priv_runasuser(EPCAP_STATE *ep)
-{
-    uid_t uid;
-    gid_t gid;
+  uid = getuid();
+  gid = getgid();
 
-    uid = getuid();
-    gid = getgid();
+  if (!(ep->opt & EPCAP_OPT_RUNASUSER) || (geteuid() != 0))
+    return 0;
 
-    if ( !(ep->opt & EPCAP_OPT_RUNASUSER) || (geteuid() != 0))
-      return 0;
-
-    if (setgroups(0, NULL) < 0)
-      return -1;
+  if (setgroups(0, NULL) < 0)
+    return -1;
 
 #if defined(__sunos__) || defined(__APPLE__)
-    if (setgid(getgid()) < 0)
-      return -1;
+  if (setgid(getgid()) < 0)
+    return -1;
 
-    if (setuid(getuid()) < 0)
-      return -1;
+  if (setuid(getuid()) < 0)
+    return -1;
 #else
-    if (setresgid(gid, gid, gid) < 0)
-      return -1;
+  if (setresgid(gid, gid, gid) < 0)
+    return -1;
 
-    if (setresuid(uid, uid, uid) < 0)
-      return -1;
+  if (setresuid(uid, uid, uid) < 0)
+    return -1;
 #endif
 
-    return 0;
+  return 0;
 }
