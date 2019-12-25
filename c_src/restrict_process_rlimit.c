@@ -41,7 +41,7 @@
 #warning "Using default value of EPCAP_RLIMIT_NOFILES=0"
 #endif
 
-int restrict_process_pcap() {
+int restrict_process_capture() {
   struct rlimit rl = {0};
 
   if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
@@ -59,7 +59,7 @@ int restrict_process_pcap() {
   return 0;
 }
 
-int restrict_process_erl() {
+int restrict_process_supervisor() {
   struct rlimit rl = {0};
 
   if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
