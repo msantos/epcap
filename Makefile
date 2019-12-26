@@ -9,7 +9,7 @@ clean:
 	@$(REBAR) clean
 
 test:
-	@$(REBAR) eunit
+	@$(REBAR) ct
 
 examples: eg
 eg:
