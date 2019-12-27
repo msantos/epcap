@@ -232,7 +232,7 @@ send_1() ->
                     ]])),
                     ok;
                 % TCP SYN retries
-                [#ether{}, #ipv4{}, #tcp{sport = 29}, _Payload] ->
+                [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] ->
                     send_1()
             end
     end.
