@@ -173,6 +173,15 @@ int restrict_process_supervisor() {
 #ifdef __NR_readv
       SC_ALLOW(readv),
 #endif
+#ifdef __NR_write
+      SC_ALLOW(write),
+#endif
+#ifdef __NR_writev
+      SC_ALLOW(writev),
+#endif
+#ifdef __NR_sendto
+      SC_ALLOW(sendto),
+#endif
 #ifdef __NR__newselect
       SC_ALLOW(_newselect),
 #endif
