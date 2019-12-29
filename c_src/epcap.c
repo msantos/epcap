@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2018, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2019, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,16 +61,20 @@ static int epcap_send(EPCAP_STATE *);
 static ssize_t read_exact(int, void *, ssize_t);
 static void usage(EPCAP_STATE *);
 
+void signal_handler(int sig);
+int signal_init(void);
+
 extern char **environ;
+
+#ifdef RESTRICT_PROCESS_capsicum
+int pdfd;
+#endif
+pid_t pid;
 
 int main(int argc, char *argv[]) {
   EPCAP_STATE *ep = NULL;
-  pid_t pid = 0;
   int ch = 0;
   int fd = 0;
-#ifdef RESTRICT_PROCESS_capsicum
-  int pdfd = 0;
-#endif
 
 #ifndef HAVE_SETPROCTITLE
   spt_init(argc, argv);
@@ -251,6 +255,9 @@ int main(int argc, char *argv[]) {
     epcap_loop(ep);
     break;
   default:
+    if (signal_init() < 0)
+      goto CLEANUP;
+
     if ((dup2(fd, STDOUT_FILENO) < 0) || (close(fd) < 0))
       goto CLEANUP;
 
@@ -567,6 +574,37 @@ static ssize_t read_exact(int fd, void *buf, ssize_t len) {
   } while (got < len);
 
   return len;
+}
+
+void signal_handler(int sig) {
+  if (pid > 0)
+#ifdef RESTRICT_PROCESS_capsicum
+    (void)pdkill(pdfd, sig);
+#else
+    (void)kill(pid, sig);
+#endif
+}
+
+int signal_init(void) {
+  struct sigaction act = {0};
+  int sig;
+
+  act.sa_handler = signal_handler;
+  (void)sigfillset(&act.sa_mask);
+
+  for (sig = 1; sig < NSIG; sig++) {
+    if (sig == SIGCHLD)
+      continue;
+
+    if (sigaction(sig, &act, NULL) < 0) {
+      if (errno == EINVAL)
+        continue;
+
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 static void usage(EPCAP_STATE *ep) {
