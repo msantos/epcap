@@ -1,4 +1,4 @@
-%% Copyright (c) 2013-2018, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2013-2019, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -121,6 +121,34 @@ init_per_testcase(filter_with_inbound, Config) ->
 
 		[{drv, Drv}|Config];
 
+init_per_testcase(send, Config) ->
+    Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
+        false -> [];
+        N -> [{interface, N}]
+    end,
+
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+
+    {ok, Drv} = epcap:start(Dev ++ [
+            {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+            inject, {verbose, Verbose},
+            {filter, "tcp and ( port 29 or port 39 )"},
+            promiscuous
+        ]),
+
+    {ok, Drv1} = case os:type() of
+                   {unix, linux} ->
+                     % XXX Linux: injected packet is not seen by filter
+                     epcap:start(Dev ++ [
+                                         {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                         {filter, "tcp and port 39"},
+                                         promiscuous
+                                        ]);
+                   _ -> {ok, undefined}
+                 end,
+
+		[{drv, Drv}, {drv1, Drv1}|Config];
+
 init_per_testcase(_Test, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
         false -> [];
@@ -140,6 +168,11 @@ init_per_testcase(_Test, Config) ->
 
 		[{drv, Drv}|Config].
 
+end_per_testcase(send, Config) ->
+    Drv = ?config(drv, Config),
+    Drv1 = ?config(drv1, Config),
+    epcap:stop(Drv),
+    epcap:stop(Drv1);
 end_per_testcase(_Test, Config) ->
     Drv = ?config(drv, Config),
     epcap:stop(Drv).
