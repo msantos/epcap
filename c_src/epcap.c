@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2019, Michael Santos <michael.santos@gmail.com>
+/* Copyright (c) 2009-2020, Michael Santos <michael.santos@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -378,13 +378,20 @@ static int epcap_open(EPCAP_STATE *ep) {
     }
   } else {
     if (ep->dev == NULL) {
-      ep->dev = pcap_lookupdev(ep->errbuf);
+      pcap_if_t *alldevs;
 
-      if (ep->dev == NULL) {
-        VERBOSE(0, "%s, failed call to pcap_lookupdev %s\n", __progname,
+      if (pcap_findalldevs(&alldevs, ep->errbuf) < 0 || alldevs == NULL) {
+        VERBOSE(0, "%s, failed call to pcap_findalldevs %s\n", __progname,
                 ep->errbuf);
         return -1;
       }
+
+      ep->dev = strdup(alldevs->name);
+
+      if (ep->dev == NULL)
+        return -1;
+
+      pcap_freealldevs(alldevs);
     }
 
 #ifdef HAVE_PCAP_CREATE
