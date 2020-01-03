@@ -32,7 +32,7 @@
 
 #ifdef RESTRICT_PROCESS_capsicum
 
-#include <sys/capability.h>
+#include <sys/capsicum.h>
 #include <sys/param.h>
 #include <sys/resource.h>
 #include <sys/time.h>
