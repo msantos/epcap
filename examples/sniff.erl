@@ -1,4 +1,4 @@
-%% Copyright (c) 2010-2015, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2010-2020, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 %% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %% POSSIBILITY OF SUCH DAMAGE.
 -module(sniff).
--behaviour(gen_fsm).
+-behaviour(gen_statem).
 
 -include_lib("pkt/include/pkt.hrl").
 
@@ -37,10 +37,9 @@
 -export([start/0, start/1, stop/0]).
 -export([start_link/0]).
 % States
--export([waiting/2, sniffing/2]).
+-export([waiting/3, sniffing/3]).
 % Behaviours
--export([init/1, handle_event/3, handle_sync_event/4,
-        handle_info/3, terminate/3, code_change/4]).
+-export([init/1, callback_mode/0, handle_info/3, terminate/3, code_change/4]).
 
 -define(is_print(C), C >= $\s, C =< $~).
 
@@ -54,32 +53,27 @@
 %%--------------------------------------------------------------------
 %%% Interface
 %%--------------------------------------------------------------------
+start_link() ->
+    gen_statem:start({local, ?MODULE}, ?MODULE, [], []).
+
 start() ->
     start([{filter, "tcp and port 80"},
             {chroot, "priv/tmp"}]).
 start(Opt) when is_list(Opt) ->
-    gen_fsm:send_event(?MODULE, {start, Opt}).
+    gen_statem:cast(?MODULE, {start, Opt}).
 
 stop() ->
-    gen_fsm:send_event(?MODULE, stop).
-
+    gen_statem:cast(?MODULE, stop).
 
 %%--------------------------------------------------------------------
 %%% Callbacks
 %%--------------------------------------------------------------------
-start_link() ->
-    gen_fsm:start({local, ?MODULE}, ?MODULE, [], []).
+callback_mode() ->
+    state_functions.
 
 init([]) ->
     process_flag(trap_exit, true),
     {ok, waiting, #state{}}.
-
-handle_event(_Event, StateName, State) ->
-    {next_state, StateName, State}.
-
-handle_sync_event(_Event, _From, StateName, State) ->
-    {next_state, StateName, State}.
-
 
 %%
 %% State: sniffing
@@ -119,7 +113,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% States
 %%--------------------------------------------------------------------
-waiting({start, Opt}, State) ->
+waiting(cast, {start, Opt}, State) ->
     Format = proplists:get_value(format, Opt, []),
     Snaplen = proplists:get_value(snaplen, Opt),
     {ok, Pid} = epcap:start_link(Opt),
@@ -127,16 +121,19 @@ waiting({start, Opt}, State) ->
             pid = Pid,
             format = Format,
             crash = Snaplen =:= undefined
-        }}.
+        }};
+waiting(info, Event, State) ->
+    handle_info(Event, waiting, State).
 
-sniffing({start, Opt}, #state{pid = Pid} = State) ->
+sniffing(cast, {start, Opt}, #state{pid = Pid} = State) ->
     epcap:stop(Pid),
     {ok, Pid1} = epcap:start_link(Opt),
     {next_state, sniffing, State#state{pid = Pid1}};
-sniffing(stop, #state{pid = Pid} = State) ->
+sniffing(cast, stop, #state{pid = Pid} = State) ->
     epcap:stop(Pid),
-    {next_state, waiting, State}.
-
+    {next_state, waiting, State};
+sniffing(info, Event, State) ->
+    handle_info(Event, sniffing, State).
 
 %%--------------------------------------------------------------------
 %%% Internal functions
