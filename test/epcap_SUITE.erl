@@ -34,50 +34,50 @@
 -include_lib("pkt/include/pkt.hrl").
 
 -export([
-        suite/0,
-        all/0,
-        init_per_testcase/2,
-        end_per_testcase/2
-    ]).
+         suite/0,
+         all/0,
+         init_per_testcase/2,
+         end_per_testcase/2
+        ]).
 -export([
-        filter/1,
-        filter_with_microsecond/1,
-        filter_with_outbound/1,
-        filter_with_inbound/1,
-        send/1
+         filter/1,
+         filter_with_microsecond/1,
+         filter_with_outbound/1,
+         filter_with_inbound/1,
+         send/1
         ]).
 
 all() ->
-  [
-   filter,
-   filter_with_microsecond,
-   filter_with_outbound,
-   filter_with_inbound,
-   send
-  ].
+    [
+     filter,
+     filter_with_microsecond,
+     filter_with_outbound,
+     filter_with_inbound,
+     send
+    ].
 
 suite() ->
-  [{timetrap, {seconds, 60}}].
+    [{timetrap, {seconds, 60}}].
 
 init_per_testcase(filter_with_microsecond, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
-        false -> [];
-        N -> [{interface, N}]
-    end,
+              false -> [];
+              N -> [{interface, N}]
+          end,
 
     Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
 
-    % Solaris pcap using DLPI requires the interface to be in promiscuous
-    % mode for outgoing packets to be captured
+                                                % Solaris pcap using DLPI requires the interface to be in promiscuous
+                                                % mode for outgoing packets to be captured
     {ok, Drv} = epcap:start(Dev ++ [
-            {time_unit, microsecond},
-            {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
-            inject, {verbose, Verbose},
-            {filter, "tcp and ( port 29 or port 39 )"},
-            promiscuous
-        ]),
+                                    {time_unit, microsecond},
+                                    {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                    inject, {verbose, Verbose},
+                                    {filter, "tcp and ( port 29 or port 39 )"},
+                                    promiscuous
+                                   ]),
 
-		[{drv, Drv}|Config];
+    [{drv, Drv}|Config];
 
 init_per_testcase(filter_with_outbound, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
@@ -98,7 +98,7 @@ init_per_testcase(filter_with_outbound, Config) ->
                                     promiscuous
                                    ]),
 
-		[{drv, Drv}|Config];
+    [{drv, Drv}|Config];
 
 init_per_testcase(filter_with_inbound, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
@@ -119,54 +119,54 @@ init_per_testcase(filter_with_inbound, Config) ->
                                     promiscuous
                                    ]),
 
-		[{drv, Drv}|Config];
+    [{drv, Drv}|Config];
 
 init_per_testcase(send, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
-        false -> [];
-        N -> [{interface, N}]
-    end,
+              false -> [];
+              N -> [{interface, N}]
+          end,
 
     Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
 
     {ok, Drv} = epcap:start(Dev ++ [
-            {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
-            inject, {verbose, Verbose},
-            {filter, "tcp and ( port 29 or port 39 )"},
-            promiscuous
-        ]),
+                                    {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                    inject, {verbose, Verbose},
+                                    {filter, "tcp and ( port 29 or port 39 )"},
+                                    promiscuous
+                                   ]),
 
     {ok, Drv1} = case os:type() of
-                   {unix, linux} ->
-                     % XXX Linux: injected packet is not seen by filter
-                     epcap:start(Dev ++ [
-                                         {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
-                                         {filter, "tcp and port 39"},
-                                         promiscuous
-                                        ]);
-                   _ -> {ok, undefined}
+                     {unix, linux} ->
+                                                % XXX Linux: injected packet is not seen by filter
+                         epcap:start(Dev ++ [
+                                             {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                             {filter, "tcp and port 39"},
+                                             promiscuous
+                                            ]);
+                     _ -> {ok, undefined}
                  end,
 
-		[{drv, Drv}, {drv1, Drv1}|Config];
+    [{drv, Drv}, {drv1, Drv1}|Config];
 
 init_per_testcase(_Test, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
-        false -> [];
-        N -> [{interface, N}]
-    end,
+              false -> [];
+              N -> [{interface, N}]
+          end,
 
     Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
 
-    % Solaris pcap using DLPI requires the interface to be in promiscuous
-    % mode for outgoing packets to be captured
+                                                % Solaris pcap using DLPI requires the interface to be in promiscuous
+                                                % mode for outgoing packets to be captured
     {ok, Drv} = epcap:start(Dev ++ [
-            {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
-            inject, {verbose, Verbose},
-            {filter, "tcp and ( port 29 or port 39 )"},
-            promiscuous
-        ]),
+                                    {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                                    inject, {verbose, Verbose},
+                                    {filter, "tcp and ( port 29 or port 39 )"},
+                                    promiscuous
+                                   ]),
 
-		[{drv, Drv}|Config].
+    [{drv, Drv}|Config].
 
 end_per_testcase(send, Config) ->
     Drv = ?config(drv, Config),
@@ -183,11 +183,11 @@ filter(_Config) ->
     receive
         {packet, DataLinkType, {A,B,C} = Time, Length, Packet} when A > 0, B > 0, C > 0 ->
             ct:pal(io_lib:format("~p", [[
-                    {dlt, DataLinkType},
-                    {time, Time},
-                    {length, Length},
-                    {packet, Packet}
-                ]])),
+                                         {dlt, DataLinkType},
+                                         {time, Time},
+                                         {length, Length},
+                                         {packet, Packet}
+                                        ]])),
             [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
     end.
 
@@ -197,11 +197,11 @@ filter_with_microsecond(_Config) ->
     receive
         {packet, DataLinkType, Time, Length, Packet} when Time > 0 ->
             ct:pal(io_lib:format("~p", [[
-                    {dlt, DataLinkType},
-                    {time, Time},
-                    {length, Length},
-                    {packet, Packet}
-                ]])),
+                                         {dlt, DataLinkType},
+                                         {time, Time},
+                                         {length, Length},
+                                         {packet, Packet}
+                                        ]])),
             [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
     end.
 
@@ -236,18 +236,18 @@ send(Config) ->
     {error, _} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
 
     Frame = receive
-        {packet, _DataLinkType, _Time, _Length, Packet} ->
-            [#ether{} = Ether, #ipv4{} = IP, #tcp{} = TCP, Payload] = pkt:decapsulate(Packet),
-            TCP1 = TCP#tcp{dport = 39, sport = 39, sum = 0},
-            Sum0 = pkt:makesum(IP#ipv4{sum = 0}),
-            Sum1 = pkt:makesum([IP, TCP1, Payload]),
-            list_to_binary([
-                    pkt:ether(Ether),
-                    pkt:ipv4(IP#ipv4{sum = Sum0}),
-                    pkt:tcp(TCP1#tcp{sum = Sum1}),
-                    Payload
-                ])
-    end,
+                {packet, _DataLinkType, _Time, _Length, Packet} ->
+                    [#ether{} = Ether, #ipv4{} = IP, #tcp{} = TCP, Payload] = pkt:decapsulate(Packet),
+                    TCP1 = TCP#tcp{dport = 39, sport = 39, sum = 0},
+                    Sum0 = pkt:makesum(IP#ipv4{sum = 0}),
+                    Sum1 = pkt:makesum([IP, TCP1, Payload]),
+                    list_to_binary([
+                                    pkt:ether(Ether),
+                                    pkt:ipv4(IP#ipv4{sum = Sum0}),
+                                    pkt:tcp(TCP1#tcp{sum = Sum1}),
+                                    Payload
+                                   ])
+            end,
     ct:pal(io_lib:format("~p", [[{frame, Frame}]])),
     ok = epcap:send(Drv, Frame),
     send_1().
@@ -258,13 +258,13 @@ send_1() ->
             case pkt:decapsulate(Packet) of
                 [#ether{}, #ipv4{}, #tcp{dport = 39}, _Payload] ->
                     ct:pal(io_lib:format("~p", [[
-                        {dlt, DataLinkType},
-                        {time, Time},
-                        {length, Length},
-                        {packet, Packet}
-                    ]])),
+                                                 {dlt, DataLinkType},
+                                                 {time, Time},
+                                                 {length, Length},
+                                                 {packet, Packet}
+                                                ]])),
                     ok;
-                % TCP SYN retries
+                                                % TCP SYN retries
                 [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] ->
                     send_1()
             end

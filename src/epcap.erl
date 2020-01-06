@@ -85,18 +85,18 @@ stop(Pid) ->
 init([Pid, Options]) ->
     process_flag(trap_exit, true),
     Options1 = setopts([
-            {chroot, filename:join([basedir(), "tmp"])},
-            {timeout, timeout()},
-            {direction, inout}
-        ], Options),
+                        {chroot, filename:join([basedir(), "tmp"])},
+                        {timeout, timeout()},
+                        {direction, inout}
+                       ], Options),
     ok = filelib:ensure_dir(filename:join(proplists:get_value(
-                chroot,
-                Options1
-            ), ".")),
+                                            chroot,
+                                            Options1
+                                           ), ".")),
     Cmd = string:join(getopts(Options1), " "),
     Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
 
-    % Block until the port has fully initialized
+                                                % Block until the port has fully initialized
     receive
         {Port, {data, Data}} ->
             {epcap, ready} = binary_to_term(Data),
@@ -109,12 +109,12 @@ init([Pid, Options]) ->
 
 handle_call({send, Packet}, _From, #state{port = Port} = State) ->
     Reply = try erlang:port_command(Port, Packet) of
-        true ->
-            ok
-        catch
-            error:badarg ->
-                {error,closed}
-        end,
+                true ->
+                    ok
+            catch
+                error:badarg ->
+                    {error,closed}
+            end,
     {reply, Reply, State};
 
 handle_call(stop, _From, State) ->
@@ -217,11 +217,11 @@ basedir() ->
     case code:priv_dir(?MODULE) of
         {error, bad_name} ->
             filename:join([
-                filename:dirname(code:which(?MODULE)),
-                "..",
-                "priv",
-                ?MODULE
-            ]);
+                           filename:dirname(code:which(?MODULE)),
+                           "..",
+                           "priv",
+                           ?MODULE
+                          ]);
         Dir ->
             Dir
     end.

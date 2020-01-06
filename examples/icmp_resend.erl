@@ -56,11 +56,11 @@ start(Dev) ->
     start(Dev, 0).
 start(Dev, Verbose) ->
     {ok, Ref} = epcap:start_link([
-            {verbose, Verbose},
-            {inteface, Dev},
-            inject,
-            {filter, "icmp"}
-        ]),
+                                  {verbose, Verbose},
+                                  {inteface, Dev},
+                                  inject,
+                                  {filter, "icmp"}
+                                 ]),
     resend(Ref).
 
 resend(Ref) ->

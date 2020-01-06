@@ -1,76 +1,76 @@
 TMPDIR = os:getenv("TMPDIR", "/tmp"),
 
 Compile = fun(Name0, Prog) ->
-    Name = filename:join(TMPDIR, Name0),
-    ok = file:write_file(Name, Prog, [write, exclusive]),
-    Cmd = erlang:open_port({spawn, ["${CC-cc} -o /dev/null ", Name, " -lpcap"]},
-            [stream, exit_status]),
-    Status = receive
-        {Cmd, {exit_status, 0}} ->
-            true;
-        {Cmd, {exit_status, _}} ->
-            false
-    end,
-    ok = file:delete(Name),
-    Status
-end,
+                  Name = filename:join(TMPDIR, Name0),
+                  ok = file:write_file(Name, Prog, [write, exclusive]),
+                  Cmd = erlang:open_port({spawn, ["${CC-cc} -o /dev/null ", Name, " -lpcap"]},
+                                         [stream, exit_status]),
+                  Status = receive
+                               {Cmd, {exit_status, 0}} ->
+                                   true;
+                               {Cmd, {exit_status, _}} ->
+                                   false
+                           end,
+                  ok = file:delete(Name),
+                  Status
+          end,
 
 Test = fun(Name, Prog, Supported, Unsupported) ->
-    case Compile(Name, Prog) of
-        true ->
-            Supported;
-        false ->
-            Unsupported
-    end
-end,
+               case Compile(Name, Prog) of
+                   true ->
+                       Supported;
+                   false ->
+                       Unsupported
+               end
+       end,
 
 Append = fun(Str, Flag) ->
-    string:join(sets:to_list(sets:add_element(Flag,
-                    sets:from_list(string:tokens(Str, " ")))), " ")
-end,
+                 string:join(sets:to_list(sets:add_element(Flag,
+                                                           sets:from_list(string:tokens(Str, " ")))), " ")
+         end,
 
 Setenv = fun(Key, Val) ->
-    Cur = os:getenv(Key, ""),
-    os:putenv(Key, Append(Cur, Val))
-end,
+                 Cur = os:getenv(Key, ""),
+                 os:putenv(Key, Append(Cur, Val))
+         end,
 
 %%
 %% Tests
 %%
 
 PFRING = fun(Config) -> case os:getenv("PFRING") of
-    false ->
-        ok;
-    Value ->
-        case filelib:is_dir(Value) of
-            true ->
-                LDFLAGS = os:getenv("EPCAP_LDFLAGS", ""),
-                true = Setenv("EPCAP_LDFLAGS", "-L" ++ Value);
-            _ ->
-                ok
-        end
-    end,
-    Config
-end,
+                            false ->
+                                ok;
+                            Value ->
+                                case filelib:is_dir(Value) of
+                                    true ->
+                                        LDFLAGS = os:getenv("EPCAP_LDFLAGS", ""),
+                                        true = Setenv("EPCAP_LDFLAGS", "-L" ++ Value);
+                                    _ ->
+                                        ok
+                                end
+                        end,
+                        Config
+         end,
 
 Pcap_create = fun(Config) ->
-    Check = "
+                      Check = "
 #include <pcap.h>
-int main(int argc, char *argv[])
-{
-    char errbuf[PCAP_ERRBUF_SIZE];
-    (void)pcap_create(NULL, errbuf);
-    return 0;
-}",
+                          int main(int argc, char *argv[])
+                          {
+                           char errbuf[PCAP_ERRBUF_SIZE];
+                               (void)pcap_create(NULL, errbuf);
+                               return 0;
+                          }",
 
     Flag = Test("test_pcap_create.c", Check, "-DHAVE_PCAP_CREATE", ""),
-    true = Setenv("EPCAP_DEFINE", Flag),
-    Config
-end,
+                      true = Setenv("EPCAP_DEFINE", Flag),
+                      Config
+              end,
 
 lists:foldl(fun(Fun, Cfg) ->
-        Fun(Cfg)
-    end,
-    CONFIG,
-    [PFRING, Pcap_create]
-    ).
+                    Fun(Cfg)
+            end,
+            CONFIG,
+            [PFRING, Pcap_create]
+           ).
