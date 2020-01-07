@@ -13,7 +13,7 @@ test:
 
 examples: eg
 eg:
-	@erlc -I _build/default/lib -o ebin examples/*.erl
+	@erlc +debug_info -I _build/default/lib -o ebin examples/*.erl
 
 .PHONY: test dialyzer clean
 
