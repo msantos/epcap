@@ -1,4 +1,4 @@
-%% Copyright (c) 2009-2018, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2009-2020, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -82,21 +82,26 @@ stop(Pid) ->
     catch gen_server:call(Pid, stop),
     ok.
 
-init([Pid, Options]) ->
+init([Pid, Options0]) ->
     process_flag(trap_exit, true),
-    Options1 = setopts([
+    Options = setopts([
                         {chroot, filename:join([basedir(), "tmp"])},
                         {timeout, timeout()},
                         {direction, inout}
-                       ], Options),
+                       ], Options0),
     ok = filelib:ensure_dir(filename:join(proplists:get_value(
                                             chroot,
-                                            Options1
+                                            Options
                                            ), ".")),
-    Cmd = string:join(getopts(Options1), " "),
-    Port = open_port({spawn, Cmd}, [{packet, 2}, binary, exit_status]),
+    [Cmd|Argv] = getopts(Options),
+    Port = open_port({spawn_executable, Cmd}, [
+                                               {args, Argv},
+                                               {packet, 2},
+                                               binary,
+                                               exit_status
+                                              ]),
 
-                                                % Block until the port has fully initialized
+    % Block until the port has fully initialized
     receive
         {Port, {data, Data}} ->
             {epcap, ready} = binary_to_term(Data),
@@ -173,13 +178,15 @@ getopts(Options) when is_list(Options) ->
     Cpu_affinity = cpu_affinity(Options),
     Filter = proplists:get_value(filter, Options, ""),
 
-    Switches0 = [ optarg(Opt) || Opt <- Options ],
-    Switches = Switches0 ++ [quote(Filter)],
+    Switches0 = lists:append([ optarg(Opt) || Opt <- Options ]),
+    Switches = Switches0 ++ [Filter],
 
-    [ N || N <- [Exec, Cpu_affinity, Progname|Switches], N /= ""].
+    [Cmd|Argv] = [ N || N <- string:tokens(Exec, " ") ++
+                        [Cpu_affinity, Progname|Switches], N /= ""],
+    [find_executable(Cmd)|Argv].
 
 -spec optarg(atom() | tuple()) -> string().
-optarg({buffer, Arg})       -> switch("b", Arg);
+optarg({buffer, Arg})       -> switch("b", maybe_string(Arg));
 optarg({chroot, Arg})       -> switch("d", Arg);
 optarg({cluster_id, Arg})   -> switch("e", env("PCAP_PF_RING_CLUSTER_ID", Arg));
 optarg({file, Arg})         -> switch("f", Arg);
@@ -187,30 +194,25 @@ optarg({group, Arg})        -> switch("g", Arg);
 optarg({interface, Arg})    -> switch("i", Arg);
 optarg(monitor)             -> switch("M");
 optarg(promiscuous)         -> switch("P");
-optarg({snaplen, Arg})      -> switch("s", Arg);
+optarg({snaplen, Arg})      -> switch("s", maybe_string(Arg));
 optarg({time_unit, Arg})    -> switch("T", time_unit(Arg));
-optarg({timeout, Arg})      -> switch("t", Arg);
+optarg({timeout, Arg})      -> switch("t", maybe_string(Arg));
 optarg({user, Arg})         -> switch("u", Arg);
 optarg(verbose)             -> switch("v");
 optarg({verbose, 0})        -> "";
 optarg({verbose, Arg})      -> switch(string:copies("v", Arg));
 optarg(inject)              -> switch("X");
-optarg({direction, Arg})    -> switch("Q", atom_to_list(Arg));
+optarg({direction, Arg})    -> switch("Q", maybe_string(Arg));
 optarg(_)                   -> "".
 
 switch(Switch) ->
-    lists:concat(["-", Switch]).
+    [lists:concat(["-", Switch])].
 
 switch(Switch, Arg) ->
-    lists:concat(["-", Switch, " ", Arg]).
+    [lists:concat(["-", Switch]), Arg].
 
 env(Key, Val) ->
-    lists:concat([Key, "=", Val]).
-
-quote("") ->
-    "";
-quote(Str) ->
-    "\"" ++ Str ++ "\"".
+    lists:concat([Key, "=", maybe_string(Val)]).
 
 -spec basedir() -> string().
 basedir() ->
@@ -253,6 +255,19 @@ timeout() ->
         _ -> 500
     end.
 
--spec time_unit(time_unit()) -> 0 | 1.
-time_unit(timestamp) -> 0;
-time_unit(microsecond) -> 1.
+%-spec time_unit(time_unit()) -> "0" | "1".
+time_unit(timestamp) -> "0";
+time_unit(microsecond) -> "1".
+
+find_executable(Exe) ->
+  case os:find_executable(Exe) of
+    false ->
+      erlang:error(badarg, [Exe]);
+    N ->
+      N
+  end.
+
+maybe_string(T) when is_list(T) -> T;
+maybe_string(T) when is_integer(T) -> integer_to_list(T);
+maybe_string(T) when is_atom(T) -> atom_to_list(T);
+maybe_string(T) when is_binary(T) -> binary_to_list(T).

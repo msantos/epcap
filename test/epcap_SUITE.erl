@@ -1,4 +1,4 @@
-%% Copyright (c) 2013-2019, Michael Santos <michael.santos@gmail.com>
+%% Copyright (c) 2013-2020, Michael Santos <michael.santos@gmail.com>
 %% All rights reserved.
 %%
 %% Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
          end_per_testcase/2
         ]).
 -export([
+         getopts/1,
          filter/1,
          filter_with_microsecond/1,
          filter_with_outbound/1,
@@ -49,6 +50,7 @@
 
 all() ->
     [
+     getopts,
      filter,
      filter_with_microsecond,
      filter_with_outbound,
@@ -149,6 +151,9 @@ init_per_testcase(send, Config) ->
 
     [{drv, Drv}, {drv1, Drv1}|Config];
 
+init_per_testcase(getopts, Config) ->
+    Config;
+
 init_per_testcase(_Test, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
               false -> [];
@@ -173,9 +178,45 @@ end_per_testcase(send, Config) ->
     Drv1 = ?config(drv1, Config),
     epcap:stop(Drv),
     epcap:stop(Drv1);
+end_per_testcase(getopts, _Config) ->
+    ok;
 end_per_testcase(_Test, Config) ->
     Drv = ?config(drv, Config),
     epcap:stop(Drv).
+
+getopts(_Config) ->
+  [Sudo, "-n", Progname, "-b", "1024", "-d", "/tmp/", "-g", "nobody",
+   "-i", "eth0", "-M", "-P", "-s", "256", "-T", "1", "-u", "nobody",
+   "-v", "-vvv", "-X", "-Q", "inout", "-t", "0",
+   "tcp and port 80"] = epcap:getopts([
+                                       {buffer, 1024},
+                                       {chroot, "/tmp/"},
+                                       {cluser_id, 0},
+                                       {group, "nobody"},
+                                       {interface, "eth0"},
+                                       monitor,
+                                       promiscuous,
+                                       {snaplen, 256},
+                                       {time_unit, microsecond},
+                                       {time_out, 60},
+                                       {user, "nobody"},
+                                       verbose,
+                                       {verbose, 3},
+                                       {verbose, 0},
+                                       inject,
+                                       {direction, inout},
+                                       {filter, "tcp and port 80"},
+                                       {timeout, 0},
+                                       {exec, "sudo -n"}
+                                      ]),
+  "sudo" = filename:basename(Sudo),
+  "epcap" = filename:basename(Progname),
+
+  [Progname, "-f", "/tmp/foo"] =  epcap:getopts([
+                                                 {file, "/tmp/foo"},
+                                                 {exec, "sudo -n"}
+                                                ]),
+  ok.
 
 filter(_Config) ->
     {error, _Reason} = gen_tcp:connect({8,8,8,8}, 29, [binary], 2000),
