@@ -185,13 +185,14 @@ end_per_testcase(_Test, Config) ->
     epcap:stop(Drv).
 
 getopts(_Config) ->
-  [Sudo, "-n", Progname, "-b", "1024", "-d", "/tmp/", "-g", "nobody",
+  [Sudo, "-n", Progname, "-b", "1024", "-d", "/tmp/",
+   "-e", "PCAP_PF_RING_CLUSTER_ID=0", "-g", "nobody",
    "-i", "eth0", "-M", "-P", "-s", "256", "-T", "1", "-u", "nobody",
-   "-v", "-vvv", "-X", "-Q", "inout", "-t", "0",
+   "-v", "-vvv", "-X", "-Q", "inout", "-t", "0", "-e", "FOO=bar",
    "tcp and port 80"] = epcap:getopts([
                                        {buffer, 1024},
                                        {chroot, "/tmp/"},
-                                       {cluser_id, 0},
+                                       {cluster_id, 0},
                                        {group, "nobody"},
                                        {interface, "eth0"},
                                        monitor,
@@ -207,7 +208,8 @@ getopts(_Config) ->
                                        {direction, inout},
                                        {filter, "tcp and port 80"},
                                        {timeout, 0},
-                                       {exec, "sudo -n"}
+                                       {exec, "sudo -n"},
+                                       {env, "FOO=bar"}
                                       ]),
   "sudo" = filename:basename(Sudo),
   "epcap" = filename:basename(Progname),

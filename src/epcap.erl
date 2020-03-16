@@ -189,6 +189,7 @@ getopts(Options) when is_list(Options) ->
 optarg({buffer, Arg})       -> switch("b", maybe_string(Arg));
 optarg({chroot, Arg})       -> switch("d", Arg);
 optarg({cluster_id, Arg})   -> switch("e", env("PCAP_PF_RING_CLUSTER_ID", Arg));
+optarg({env, Arg})          -> switch("e", Arg);
 optarg({file, Arg})         -> switch("f", Arg);
 optarg({group, Arg})        -> switch("g", Arg);
 optarg({interface, Arg})    -> switch("i", Arg);

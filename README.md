@@ -44,7 +44,8 @@ To compile the examples:
                             {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
                             {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
                             {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()} |
-                            {time_unit, microsecond | timestamp} | {direction, in | out | inout}
+                            {time_unit, microsecond | timestamp} | {direction, in | out | inout} |
+                            {env, string()}
 
         Packets are delivered as messages:
 
