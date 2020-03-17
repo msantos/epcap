@@ -42,6 +42,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
+-export_type([time_unit/0, options/0]).
+
 -record(state, {pid :: pid(), port :: port()}).
 
 -type time_unit() :: timestamp | microsecond.
@@ -49,10 +51,10 @@
 -spec start() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start() ->
     start(self(), []).
--spec start(proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
+-spec start(options()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start(Options) ->
     start(self(), Options).
--spec start(pid(),proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
+-spec start(pid(),options()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     gen_server:start(?MODULE, [Pid, Options], []).
 
@@ -60,11 +62,11 @@ start(Pid, Options) when is_pid(Pid), is_list(Options) ->
 start_link() ->
     start_link(self(), []).
 
--spec start_link(proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
+-spec start_link(options()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link(Options) ->
     start_link(self(), Options).
 
--spec start_link(pid(),proplists:proplist()) -> 'ignore' | {'error',_} | {'ok',pid()}.
+-spec start_link(pid(),options()) -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link(Pid, Options) ->
     gen_server:start_link(?MODULE, [Pid, Options], []).
 
@@ -160,7 +162,28 @@ handle_info(Info, State) ->  %% WTF
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
--spec setopts(proplists:proplist(),proplists:proplist()) -> proplists:proplist().
+-type arg_num() :: string() | non_neg_integer().
+-type options() :: [
+                    inject
+                    | monitor
+                    | promiscuous
+                    | verbose
+                    | {buffer, arg_num()}
+                    | {chroot, string()}
+                    | {cluster_id, arg_num()}
+                    | {direction, in | out | inout}
+                    | {env, string()}
+                    | {file, string()}
+                    | {filter, string()}
+                    | {group, string()}
+                    | {interface, string()}
+                    | {snaplen, arg_num()}
+                    | {time_unit, time_unit()}
+                    | {timeout, arg_num()}
+                    | {user, string()}
+                    | {verbose, arg_num()}
+                   ].
+-spec setopts(options(),options()) -> options().
 setopts([], Options) ->
     proplists:compact(Options);
 setopts([{Key,Val}|Rest], Options) ->
@@ -171,7 +194,7 @@ setopts([{Key,Val}|Rest], Options) ->
             setopts(Rest, Options)
     end.
 
--spec getopts(proplists:proplist()) -> [string()].
+-spec getopts(options()) -> [string()].
 getopts(Options) when is_list(Options) ->
     Exec = exec(Options),
     Progname = proplists:get_value(progname, Options, progname()),
