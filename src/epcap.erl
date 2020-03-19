@@ -173,10 +173,12 @@ handle_info(Info, State) ->  %% WTF
                     | {cluster_id, arg_num()}
                     | {direction, in | out | inout}
                     | {env, string()}
+                    | {exec, string()}
                     | {file, string()}
                     | {filter, string()}
                     | {group, string()}
                     | {interface, string()}
+                    | {progname, string()}
                     | {snaplen, arg_num()}
                     | {time_unit, time_unit()}
                     | {timeout, arg_num()}
