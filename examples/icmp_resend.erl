@@ -29,6 +29,7 @@
 %%% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %%% POSSIBILITY OF SUCH DAMAGE.
 -module(icmp_resend).
+
 -export([start/1, start/2]).
 
 %% An example of using epcap to send packets. It sniffs the
@@ -52,20 +53,16 @@
 %% 2 packets transmitted, 2 received, +2 duplicates, 0% packet loss, time 1001ms
 %% rtt min/avg/max/mdev = 13.914/25.738/37.222/10.915 ms
 
-start(Dev) ->
-    start(Dev, 0).
+start(Dev) -> start(Dev, 0).
+
 start(Dev, Verbose) ->
-    {ok, Ref} = epcap:start_link([
-                                  {verbose, Verbose},
-                                  {inteface, Dev},
-                                  inject,
-                                  {filter, "icmp"}
-                                 ]),
+    {ok, Ref} = epcap:start_link([{verbose, Verbose}, {inteface, Dev}, inject,
+                                  {filter, "icmp"}]),
     resend(Ref).
 
 resend(Ref) ->
     receive
-        {packet, _DataLinkType, _Time, _Length, Packet} ->
-            ok = epcap:send(Ref, Packet),
-            resend(Ref)
+      {packet, _DataLinkType, _Time, _Length, Packet} ->
+          ok = epcap:send(Ref, Packet), resend(Ref)
     end.
+
