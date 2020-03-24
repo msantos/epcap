@@ -1,10 +1,9 @@
-{application, epcap, [
-                      {description, "libpcap port"},
-                      {vsn, "0.8.1"},
-                      {registered, []},
-                      {applications, [
-                                      kernel,
-                                      stdlib
-                                     ]},
-                      {env, []}
-                     ]}.
+{application, epcap,
+              [{description, "libpcap port"},
+               {vsn, "0.8.1"},
+               {registered, []},
+               {applications, [kernel,stdlib]},
+               {env, []},
+               {licenses,["BSD-3-Clause"]},
+               {maintainers,["Michael Santos"]},
+               {links,[{"Github","https://github.com/msantos/epcap"}]}]}.
