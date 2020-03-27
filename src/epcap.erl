@@ -1,5 +1,5 @@
-%%% Copyright (c) 2009-2020 Michael Santos <michael.santos@gmail.com>. All
-%%% rights reserved.
+%%% @copyright 2009-2020 Michael Santos <michael.santos@gmail.com>
+%%% All rights reserved.
 %%%
 %%% Redistribution and use in source and binary forms, with or without
 %%% modification, are permitted provided that the following conditions
@@ -50,31 +50,75 @@
 
 -type time_unit() :: timestamp | microsecond.
 
+%% @doc start the epcap port process
 -spec start() -> ignore | {error, _} | {ok, pid()}.
 
 start() -> start(self(), []).
 
+%% @doc start the epcap port process
 -spec start(options()) -> ignore | {error, _} | {ok, pid()}.
 
 start(Options) -> start(self(), Options).
 
+%% @doc start the epcap port process
 -spec start(pid(), options()) -> ignore | {error, _} | {ok, pid()}.
 
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     gen_server:start(?MODULE, [Pid, Options], []).
 
+%% @doc start and link with the epcap port process
 -spec start_link() -> ignore | {error, _} | {ok, pid()}.
 
 start_link() -> start_link(self(), []).
 
+%% @doc start and link with the epcap port process
 -spec start_link(options()) -> ignore | {error, _} | {ok, pid()}.
 
 start_link(Options) -> start_link(self(), Options).
 
+%% @doc start and link with the epcap port process
+%%
+%% Packets are delivered as messages:
+%%
+%% ```
+%% {packet, DataLinkType, Time, Length, Packet}
+%% '''
+%%
+%% The DataLinkType is an integer representing the link layer,
+%% e.g., ethernet, Linux cooked socket.
+%%
+%% The Time can be either in microseconds or a timestamp in the same
+%% format as erlang:now/0 depending on the value of the time_unit
+%% option (default: timestamp):
+%%
+%% ```
+%% {MegaSecs, Secs, MicroSecs}
+%% '''
+%%
+%% The Length corresponds to the actual packet length on the
+%% wire. The captured packet may have been truncated. To get the
+%% captured packet length, use byte_size(Packet).
+%%
+%% The Packet is a binary holding the captured data.
+%%
+%% If the version of the pcap library supports it, the pcap buffer
+%% size can be set to avoid dropped packets by using the 'buffer'
+%% option. The buffer size must be larger than the snapshot
+%% length (default: 65535) plus some overhead for the pcap data
+%% structures. Using some multiple of the snapshot length is
+%% suggested.
 -spec start_link(pid(), options()) -> ignore | {error, _} | {ok, pid()}.
 
 start_link(Pid, Options) -> gen_server:start_link(?MODULE, [Pid, Options], []).
 
+%% @doc Inject a packet on the network interface.
+%%
+%% To enable sending packets, start_link/1 must be called with the
+%% `{inject, true}' option (default: `{inject, false}'). When disabled,
+%% any data sent to the epcap port is silently discarded. Packet injection
+%% failures are treated as fatal errors, terminating the epcap port. Partial
+%% writes are not considered to be errors and are ignored (an error message
+%% will be printed to stderr if the verbose option is used).
 -spec send(pid(), iodata()) -> ok.
 
 send(Pid, Packet) when is_pid(Pid) ->
