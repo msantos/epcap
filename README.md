@@ -45,7 +45,7 @@ To compile the examples:
                             {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
                             {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()} |
                             {time_unit, microsecond | timestamp} | {direction, in | out | inout} |
-                            {env, string()}
+                            {immediate, boolean()}, {env, string()}
 
         Packets are delivered as messages:
 

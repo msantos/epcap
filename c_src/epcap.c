@@ -86,8 +86,9 @@ int main(int argc, char *argv[]) {
 
   ep->snaplen = SNAPLEN;
   ep->timeout = TIMEOUT;
+  ep->opt |= EPCAP_OPT_IMMEDIATE;
 
-  while ((ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:u:Q:vX")) != -1) {
+  while ((ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:I:u:Q:vX")) != -1) {
     switch (ch) {
     case 'b':
       ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
@@ -163,6 +164,14 @@ int main(int argc, char *argv[]) {
       break;
     case 't':
       ep->timeout = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
+      if (errno)
+        exit(errno);
+      break;
+    case 'I':
+      if (strtonum(optarg, 0, 1, NULL))
+        ep->opt |= EPCAP_OPT_IMMEDIATE;
+      else
+        ep->opt &= ~EPCAP_OPT_IMMEDIATE;
       if (errno)
         exit(errno);
       break;
@@ -403,6 +412,7 @@ static int epcap_open(EPCAP_STATE *ep) {
 
     (void)pcap_set_snaplen(ep->p, ep->snaplen);
     (void)pcap_set_promisc(ep->p, ep->opt & EPCAP_OPT_PROMISC);
+    (void)pcap_set_immediate_mode(ep->p, ep->opt & EPCAP_OPT_IMMEDIATE);
     (void)pcap_set_timeout(ep->p, ep->timeout);
 
     if (ep->bufsz > 0)
@@ -633,6 +643,7 @@ static void usage(EPCAP_STATE *ep) {
 #endif
       "              -s <length>      packet capture length\n"
       "              -t <millisecond> capture timeout\n"
+      "              -I               enable immediate mode\n"
       "              -e <key>=<val>   set an environment variable\n"
       "              -v               verbose mode\n"
       "              -X               enable sending packets\n"
