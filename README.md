@@ -45,7 +45,8 @@ To compile the examples:
                             {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
                             {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()} |
                             {time_unit, microsecond | timestamp} | {direction, in | out | inout} |
-                            {immediate, boolean()}, {env, string()}
+                            {timeout, pos_integer()}, {immediate, boolean()},
+                            {env, string()}
 
         Packets are delivered as messages:
 
@@ -71,7 +72,10 @@ To compile the examples:
         option. The buffer size must be larger than the snapshot
         length (default: 65535) plus some overhead for the pcap data
         structures. Using some multiple of the snapshot length is
-        suggested.
+        suggested. The timeout used when appending subsequent packets
+        to the buffer can be controlled by the 'timeout' option on some
+        platforms (value in msecs), given that the 'immediate' option is
+        set to 'false' explicitly.
 
     epcap:send(Ref, Packet) -> ok
 
