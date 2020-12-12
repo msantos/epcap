@@ -186,7 +186,7 @@ handle_info(Info,
 %%--------------------------------------------------------------------
 -type arg_num() :: string() | non_neg_integer().
 
--type options() :: [inject | monitor | promiscuous | verbose |
+-type options() :: [inject | monitor | promiscuous | verbose | immediate |
                     {buffer, arg_num()} | {chroot, string()} | {cluster_id, arg_num()} |
                     {direction, in | out | inout} | {env, string()} | {exec, string()} |
                     {file, string()} | {filter, string()} | {group, string()} |
@@ -231,6 +231,8 @@ optarg(promiscuous) -> switch("P");
 optarg({snaplen, Arg}) -> switch("s", maybe_string(Arg));
 optarg({time_unit, Arg}) -> switch("T", time_unit(Arg));
 optarg({timeout, Arg}) -> switch("t", maybe_string(Arg));
+optarg(immediate) -> switch("I", "1");
+optarg({immediate, false}) -> switch("I", "0");
 optarg({user, Arg}) -> switch("u", Arg);
 optarg(verbose) -> switch("v");
 optarg({verbose, 0}) -> "";

@@ -85,6 +85,7 @@ enum {
   EPCAP_OPT_RUNASUSER = 1 << 1, /* setuid: drop privs to calling user */
   EPCAP_OPT_RFMON = 1 << 2,     /* enable monitor mode */
   EPCAP_OPT_INJECT = 1 << 3,    /* enable packet injection */
+  EPCAP_OPT_IMMEDIATE = 1 << 4, /* enable capture immediate mode */
 };
 
 typedef struct {
