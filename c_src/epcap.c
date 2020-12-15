@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   ep->timeout = TIMEOUT;
   ep->opt |= EPCAP_OPT_IMMEDIATE;
 
-  while ((ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:I:u:Q:vX")) != -1) {
+  while ((ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:u:Q:vX")) != -1) {
     switch (ch) {
     case 'b':
       ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
@@ -166,14 +166,12 @@ int main(int argc, char *argv[]) {
       ep->timeout = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
       if (errno)
         exit(errno);
-      break;
-    case 'I':
-      if (strtonum(optarg, 0, 1, NULL))
+      if (ep->timeout < 0)
+        ep->timeout = INT32_MAX;
+      if (ep->timeout == 0)
         ep->opt |= EPCAP_OPT_IMMEDIATE;
       else
         ep->opt &= ~EPCAP_OPT_IMMEDIATE;
-      if (errno)
-        exit(errno);
       break;
     case 'u':
       ep->user = strdup(optarg);
@@ -643,7 +641,6 @@ static void usage(EPCAP_STATE *ep) {
 #endif
       "              -s <length>      packet capture length\n"
       "              -t <millisecond> capture timeout\n"
-      "              -I               enable immediate mode\n"
       "              -e <key>=<val>   set an environment variable\n"
       "              -v               verbose mode\n"
       "              -X               enable sending packets\n"

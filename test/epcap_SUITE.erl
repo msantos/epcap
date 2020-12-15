@@ -133,14 +133,16 @@ end_per_testcase(_Test, Config) ->
 getopts(_Config) ->
     [Sudo, "-n", Progname, "-b", "1024", "-d", "/tmp/", "-e",
      "PCAP_PF_RING_CLUSTER_ID=0", "-g", "nobody", "-i", "eth0", "-M", "-P", "-s",
-     "256", "-T", "1", "-u", "nobody", "-v", "-vvv", "-X", "-Q", "inout", "-t", "0",
-     "-I", "1", "-I", "0", "-e", "FOO=bar", "tcp and port 80"] =
+     "256", "-T", "1", "-u", "nobody", "-v", "-vvv", "-X", "-Q", "inout",
+     "-t", "1", "-t", "-1", "-t", "0",
+     "-e", "FOO=bar", "tcp and port 80"] =
         epcap:getopts([{buffer, 1024}, {chroot, "/tmp/"}, {cluster_id, 0},
                        {group, "nobody"}, {interface, "eth0"}, monitor, promiscuous, {snaplen, 256},
                        {time_unit, microsecond}, {time_out, 60}, {user, "nobody"}, verbose,
                        {verbose, 3}, {verbose, 0}, inject, {direction, inout},
-                       {filter, "tcp and port 80"}, {timeout, 0}, {exec, "sudo -n"},
-                       immediate, {immediate, false},
+                       {filter, "tcp and port 80"},
+                       {timeout, 1}, {timeout, infinity}, {timeout, immediate},
+                       {exec, "sudo -n"},
                        {env, "FOO=bar"}]),
     "sudo" = filename:basename(Sudo),
     "epcap" = filename:basename(Progname),

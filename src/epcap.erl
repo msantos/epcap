@@ -186,13 +186,13 @@ handle_info(Info,
 %%--------------------------------------------------------------------
 -type arg_num() :: string() | non_neg_integer().
 
--type options() :: [inject | monitor | promiscuous | verbose | immediate |
+-type options() :: [inject | monitor | promiscuous | verbose |
                     {buffer, arg_num()} | {chroot, string()} | {cluster_id, arg_num()} |
                     {direction, in | out | inout} | {env, string()} | {exec, string()} |
                     {file, string()} | {filter, string()} | {group, string()} |
                     {interface, string()} | {progname, string()} | {snaplen, arg_num()} |
-                    {time_unit, time_unit()} | {timeout, arg_num()} | {user, string()} |
-                    {verbose, arg_num()}].
+                    {time_unit, time_unit()} | {timeout, arg_num() | infinity | immediate} |
+                    {user, string()} | {verbose, arg_num()}].
 
 -spec setopts(options(), options()) -> options().
 
@@ -230,9 +230,9 @@ optarg(monitor) -> switch("M");
 optarg(promiscuous) -> switch("P");
 optarg({snaplen, Arg}) -> switch("s", maybe_string(Arg));
 optarg({time_unit, Arg}) -> switch("T", time_unit(Arg));
+optarg({timeout, immediate}) -> switch("t", "0");
+optarg({timeout, infinity}) -> switch("t", "-1");
 optarg({timeout, Arg}) -> switch("t", maybe_string(Arg));
-optarg(immediate) -> switch("I", "1");
-optarg({immediate, false}) -> switch("I", "0");
 optarg({user, Arg}) -> switch("u", Arg);
 optarg(verbose) -> switch("v");
 optarg({verbose, 0}) -> "";
