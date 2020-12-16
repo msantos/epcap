@@ -37,11 +37,13 @@
 -export([suite/0, all/0, init_per_testcase/2, end_per_testcase/2]).
 
 -export([getopts/1, filter/1, filter_with_microsecond/1, filter_with_outbound/1,
-         filter_with_inbound/1, send/1]).
+         filter_with_inbound/1, send/1, timeout_immediate/1, timeout_0/1,
+         timeout_3000/1, timeout_infinity/1]).
 
 all() ->
     [getopts, filter, filter_with_microsecond, filter_with_outbound,
-     filter_with_inbound, send].
+     filter_with_inbound, send, timeout_immediate, timeout_0, timeout_3000,
+     timeout_infinity].
 
 suite() -> [{timetrap, {seconds, 60}}].
 
@@ -86,6 +88,21 @@ init_per_testcase(filter_with_inbound, Config) ->
                                {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")}, inject,
                                {verbose, Verbose}, {filter, "tcp and ( port 29 or port 39 )"},
                                {direction, in}, promiscuous]),
+    [{drv, Drv} | Config];
+init_per_testcase(Test, Config) when Test > timeout_, Test < timeout_zzz ->
+    "timeout_" ++ TimeoutStr = atom_to_list(Test),
+    Timeout = try list_to_integer(TimeoutStr) catch _:_ -> list_to_atom(TimeoutStr) end,
+    Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
+            false -> [];
+            N -> [{interface, N}]
+          end,
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+    % Solaris pcap using DLPI requires the interface to be in promiscuous
+    % mode for outgoing packets to be captured
+    {ok, Drv} = epcap:start(Dev ++
+                              [{exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")}, inject,
+                               {verbose, Verbose}, {filter, "tcp and ( port 29 or port 39 )"},
+                               {timeout, Timeout}, promiscuous]),
     [{drv, Drv} | Config];
 init_per_testcase(send, Config) ->
     Dev = case os:getenv("EPCAP_TEST_INTERFACE") of
@@ -184,6 +201,44 @@ filter_with_outbound(_Config) ->
 filter_with_inbound(_Config) ->
     {error, _} = gen_tcp:connect({8, 8, 8, 8}, 29, [binary], 2000),
     receive fail_when_some_received -> ok after 1000 -> ok end.
+
+timeout_immediate(Config) ->
+    timeout(Config, 0).
+
+timeout_0(Config) ->
+    timeout(Config, 0).
+
+timeout_3000(Config) ->
+    timeout(Config, 3000).
+
+timeout(_Config, ExpDelay) ->
+    Start = erlang:monotonic_time(millisecond),
+    {error, _Reason} = gen_tcp:connect({8, 8, 8, 8}, 29, [binary], 500),
+    receive
+      {packet, DataLinkType, {A, B, C} = Time, Length, Packet}
+          when A > 0, B > 0, C > 0 ->
+          Stop = erlang:monotonic_time(millisecond),
+          ct:pal(io_lib:format("~p",
+                               [[{dlt, DataLinkType}, {time, Time}, {length, Length},
+                                 {packet, Packet}, {delay, Stop - Start}]])),
+          true = (Stop - Start) < ExpDelay + 1000,
+          [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
+    end.
+
+timeout_infinity(_Config) ->
+    Start = erlang:monotonic_time(millisecond),
+    {error, _Reason} = gen_tcp:connect({8, 8, 8, 8}, 29, [binary], 500),
+    receive
+      {packet, DataLinkType, {A, B, C} = Time, Length, Packet}
+          when A > 0, B > 0, C > 0 ->
+          Stop = erlang:monotonic_time(millisecond),
+          ct:pal(io_lib:format("~p",
+                               [[{dlt, DataLinkType}, {time, Time}, {length, Length},
+                                 {packet, Packet}, {delay, Stop - Start}]])),
+          ct:fail("Unexpected packet (infinite timeout)")
+    after
+      5000 -> ok
+    end.
 
 send(Config) ->
     Drv = (?config(drv, Config)),
