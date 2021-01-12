@@ -41,39 +41,40 @@
 -export([getopts/1]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
-         code_change/3]).
+-export([
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
+    terminate/2,
+    code_change/3
+]).
 
 -export_type([time_unit/0, options/0]).
 
--record(state, {pid  :: pid(), port  :: port()}).
+-record(state, {pid :: pid(), port :: port()}).
 
 -type time_unit() :: timestamp | microsecond.
 
 %% @doc start the epcap port process
 -spec start() -> ignore | {error, _} | {ok, pid()}.
-
 start() -> start(self(), []).
 
 %% @doc start the epcap port process
 -spec start(options()) -> ignore | {error, _} | {ok, pid()}.
-
 start(Options) -> start(self(), Options).
 
 %% @doc start the epcap port process
 -spec start(pid(), options()) -> ignore | {error, _} | {ok, pid()}.
-
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     gen_server:start(?MODULE, [Pid, Options], []).
 
 %% @doc start and link with the epcap port process
 -spec start_link() -> ignore | {error, _} | {ok, pid()}.
-
 start_link() -> start_link(self(), []).
 
 %% @doc start and link with the epcap port process
 -spec start_link(options()) -> ignore | {error, _} | {ok, pid()}.
-
 start_link(Options) -> start_link(self(), Options).
 
 %% @doc start and link with the epcap port process
@@ -108,7 +109,6 @@ start_link(Options) -> start_link(self(), Options).
 %% structures. Using some multiple of the snapshot length is
 %% suggested.
 -spec start_link(pid(), options()) -> ignore | {error, _} | {ok, pid()}.
-
 start_link(Pid, Options) -> gen_server:start_link(?MODULE, [Pid, Options], []).
 
 %% @doc Inject a packet on the network interface.
@@ -120,47 +120,65 @@ start_link(Pid, Options) -> gen_server:start_link(?MODULE, [Pid, Options], []).
 %% writes are not considered to be errors and are ignored (an error message
 %% will be printed to stderr if the verbose option is used).
 -spec send(pid(), iodata()) -> ok.
-
 send(Pid, Packet) when is_pid(Pid) ->
     case iolist_size(Packet) < 65535 of
-      true -> gen_server:call(Pid, {send, Packet}, infinity);
-      false -> erlang:error(badarg)
+        true -> gen_server:call(Pid, {send, Packet}, infinity);
+        false -> erlang:error(badarg)
     end.
 
 -spec stop(pid()) -> ok.
-
-stop(Pid) -> catch gen_server:call(Pid, stop), ok.
+stop(Pid) ->
+    catch gen_server:call(Pid, stop),
+    ok.
 
 init([Pid, Options0]) ->
     process_flag(trap_exit, true),
-    Options = setopts([{chroot, filename:join([basedir(), "tmp"])},
-                       {timeout, timeout()}, {direction, inout}],
-                      Options0),
-    ok = filelib:ensure_dir(filename:join(proplists:get_value(chroot, Options),
-                                          ".")),
+    Options = setopts(
+        [
+            {chroot, filename:join([basedir(), "tmp"])},
+            {timeout, timeout()},
+            {direction, inout}
+        ],
+        Options0
+    ),
+    ok = filelib:ensure_dir(
+        filename:join(
+            proplists:get_value(chroot, Options),
+            "."
+        )
+    ),
     [Cmd | Argv] = getopts(Options),
-    Port = open_port({spawn_executable, Cmd},
-                     [{args, Argv}, {packet, 2}, binary, exit_status]),
+    Port = open_port(
+        {spawn_executable, Cmd},
+        [{args, Argv}, {packet, 2}, binary, exit_status]
+    ),
     % Block until the port has fully initialized
     receive
-      {Port, {data, Data}} ->
-          {epcap, ready} = binary_to_term(Data), {ok, #state{pid = Pid, port = Port}};
-      {'EXIT', Port, normal} -> {stop, {error, port_init_failed}};
-      {'EXIT', Port, Reason} -> {stop, {error, Reason}}
+        {Port, {data, Data}} ->
+            {epcap, ready} = binary_to_term(Data),
+            {ok, #state{pid = Pid, port = Port}};
+        {'EXIT', Port, normal} ->
+            {stop, {error, port_init_failed}};
+        {'EXIT', Port, Reason} ->
+            {stop, {error, Reason}}
     end.
 
 handle_call({send, Packet}, _From, #state{port = Port} = State) ->
-    Reply = try erlang:port_command(Port, Packet) of
-              true -> ok
-            catch
-              error:badarg -> {error, closed}
-            end,
+    Reply =
+        try erlang:port_command(Port, Packet) of
+            true -> ok
+        catch
+            error:badarg -> {error, closed}
+        end,
     {reply, Reply, State};
-handle_call(stop, _From, State) -> {stop, normal, ok, State}.
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State}.
 
 handle_cast(_Msg, State) -> {noreply, State}.
 
-terminate(_Reason, #state{port = Port}) -> catch erlang:port_close(Port), ok.
+terminate(_Reason, #state{port = Port}) ->
+    catch erlang:port_close(Port),
+    ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
@@ -168,43 +186,63 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Port communication
 %%--------------------------------------------------------------------
 handle_info({Port, {data, Data}}, #state{port = Port, pid = Pid} = State) ->
-    Pid ! binary_to_term(Data), {noreply, State};
+    Pid ! binary_to_term(Data),
+    {noreply, State};
 handle_info({'EXIT', Port, Reason}, #state{port = Port} = State) ->
     {stop, {shutdown, Reason}, State};
 handle_info({Port, {exit_status, Status}}, #state{port = Port} = State) ->
     case Status of
-      0 -> {stop, normal, State};
-      _ when 128 < Status -> {stop, {port_terminated, Status - 128}, State};
-      _ -> {stop, {port_terminated, Status}, State}
+        0 -> {stop, normal, State};
+        _ when 128 < Status -> {stop, {port_terminated, Status - 128}, State};
+        _ -> {stop, {port_terminated, Status}, State}
     end;
-handle_info(Info,
-            State) ->  %% WTF
-    error_logger:error_report([{wtf, Info}]), {noreply, State}.
+handle_info(
+    Info,
+    %% WTF
+    State
+) ->
+    error_logger:error_report([{wtf, Info}]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
 -type arg_num() :: string() | non_neg_integer().
 
--type options() :: [inject | monitor | promiscuous | verbose | immediate |
-                    {buffer, arg_num()} | {chroot, string()} | {cluster_id, arg_num()} |
-                    {direction, in | out | inout} | {env, string()} | {exec, string()} |
-                    {file, string()} | {filter, string()} | {group, string()} |
-                    {interface, string()} | {progname, string()} | {snaplen, arg_num()} |
-                    {time_unit, time_unit()} | {timeout, arg_num()} | {user, string()} |
-                    {verbose, arg_num()}].
+-type options() :: [
+    inject
+    | monitor
+    | promiscuous
+    | verbose
+    | immediate
+    | {buffer, arg_num()}
+    | {chroot, string()}
+    | {cluster_id, arg_num()}
+    | {direction, in | out | inout}
+    | {env, string()}
+    | {exec, string()}
+    | {file, string()}
+    | {filter, string()}
+    | {group, string()}
+    | {interface, string()}
+    | {progname, string()}
+    | {snaplen, arg_num()}
+    | {time_unit, time_unit()}
+    | {timeout, arg_num()}
+    | {user, string()}
+    | {verbose, arg_num()}
+].
 
 -spec setopts(options(), options()) -> options().
-
-setopts([], Options) -> proplists:compact(Options);
+setopts([], Options) ->
+    proplists:compact(Options);
 setopts([{Key, Val} | Rest], Options) ->
     case proplists:get_value(Key, Options) of
-      undefined -> setopts(Rest, [{Key, Val} | Options]);
-      _ -> setopts(Rest, Options)
+        undefined -> setopts(Rest, [{Key, Val} | Options]);
+        _ -> setopts(Rest, Options)
     end.
 
 -spec getopts(options()) -> [string()].
-
 getopts(Options) when is_list(Options) ->
     Exec = exec(Options),
     Progname = proplists:get_value(progname, Options, progname()),
@@ -212,13 +250,14 @@ getopts(Options) when is_list(Options) ->
     Filter = proplists:get_value(filter, Options, ""),
     Switches0 = lists:append([optarg(Opt) || Opt <- Options]),
     Switches = Switches0 ++ [Filter],
-    [Cmd | Argv] = [N
-                    || N <- string:tokens(Exec, " ") ++ [Cpu_affinity, Progname | Switches],
-                       N /= ""],
+    [Cmd | Argv] = [
+        N
+        || N <- string:tokens(Exec, " ") ++ [Cpu_affinity, Progname | Switches],
+           N /= ""
+    ],
     [find_executable(Cmd) | Argv].
 
 -spec optarg(atom() | tuple()) -> string().
-
 optarg({buffer, Arg}) -> switch("b", maybe_string(Arg));
 optarg({chroot, Arg}) -> switch("d", Arg);
 optarg({cluster_id, Arg}) -> switch("e", env("PCAP_PF_RING_CLUSTER_ID", Arg));
@@ -248,41 +287,37 @@ switch(Switch, Arg) -> [lists:concat(["-", Switch]), Arg].
 env(Key, Val) -> lists:concat([Key, "=", maybe_string(Val)]).
 
 -spec basedir() -> string().
-
 basedir() ->
     case code:priv_dir(?MODULE) of
-      {error, bad_name} ->
-          filename:join([filename:dirname(code:which(?MODULE)), "..", "priv", ?MODULE]);
-      Dir -> Dir
+        {error, bad_name} ->
+            filename:join([filename:dirname(code:which(?MODULE)), "..", "priv", ?MODULE]);
+        Dir ->
+            Dir
     end.
 
 -spec progname() -> string().
-
 progname() -> filename:join([basedir(), ?MODULE]).
 
 -spec exec(proplists:proplist()) -> string().
-
 exec(Options) ->
     Exec = proplists:get_value(exec, Options, "sudo"),
     case proplists:is_defined(file, Options) of
-      true -> "";
-      false -> Exec
+        true -> "";
+        false -> Exec
     end.
 
 -spec cpu_affinity(proplists:proplist()) -> string().
-
 cpu_affinity(Options) ->
     case proplists:get_value(cpu_affinity, Options) of
-      undefined -> "";
-      CPUs -> "taskset -c " ++ CPUs
+        undefined -> "";
+        CPUs -> "taskset -c " ++ CPUs
     end.
 
 -spec timeout() -> 0 | 500.
-
 timeout() ->
     case os:type() of
-      {unix, linux} -> 0;
-      _ -> 500
+        {unix, linux} -> 0;
+        _ -> 500
     end.
 
 %-spec time_unit(time_unit()) -> "0" | "1".
@@ -291,12 +326,11 @@ time_unit(microsecond) -> "1".
 
 find_executable(Exe) ->
     case os:find_executable(Exe) of
-      false -> erlang:error(badarg, [Exe]);
-      N -> N
+        false -> erlang:error(badarg, [Exe]);
+        N -> N
     end.
 
 maybe_string(T) when is_list(T) -> T;
 maybe_string(T) when is_integer(T) -> integer_to_list(T);
 maybe_string(T) when is_atom(T) -> atom_to_list(T);
 maybe_string(T) when is_binary(T) -> binary_to_list(T).
-
