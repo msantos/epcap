@@ -14,17 +14,16 @@ C_SRC_DIR = $(CURDIR)
 C_SRC_OUTPUT ?= $(CURDIR)/../priv/$(PROJECT)
 
 # System type and C compiler/flags.
+CC ?= cc
 
 UNAME_SYS := $(shell uname -s)
 ifeq ($(UNAME_SYS), Darwin)
-	CC ?= cc
-        LDFLAGS ?= -Wno-missing-braces
-        CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
-								 	-Wformat -Werror=format-security \
-								 	-fno-strict-aliasing \
-								 	-pie -fPIE
+	LDFLAGS ?= -Wno-missing-braces
+	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
+					 	-Wformat -Werror=format-security \
+					 	-fno-strict-aliasing \
+					 	-pie -fPIE
 else ifeq ($(UNAME_SYS), FreeBSD)
-	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now -Wl,-z,noexecstack
 	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM \
 					 	-D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
@@ -33,7 +32,6 @@ else ifeq ($(UNAME_SYS), FreeBSD)
 					 	-pie -fPIE
 	RESTRICT_PROCESS ?= capsicum
 else ifeq ($(UNAME_SYS), OpenBSD)
-	CC ?= cc
 	LDFLAGS ?= -Wl,-z,relro,-z,now -Wl,-z,noexecstack
 	CFLAGS ?= -DHAVE_SETPROCTITLE -DHAVE_STRTONUM \
 					 	-D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
@@ -42,7 +40,6 @@ else ifeq ($(UNAME_SYS), OpenBSD)
 					 	-pie -fPIE
 	RESTRICT_PROCESS ?= pledge
 else ifeq ($(UNAME_SYS), Linux)
-	CC ?= cc
 	LDFLAGS ?= -Wl,-Bsymbolic-functions -Wl,-z,relro,-z,now -Wl,-z,noexecstack
 	CFLAGS ?= -D_FORTIFY_SOURCE=2 -O2 -fstack-protector-strong \
 					 	-Wformat -Werror=format-security \
@@ -71,7 +68,7 @@ c_verbose = $(c_verbose_$(V))
 link_verbose_0 = @echo " LD    " $(@F);
 link_verbose = $(link_verbose_$(V))
 
-SOURCES := $(shell find $(C_SRC_DIR) -type f \( -name "*.c" -o -name "*.C" -o -name "*.cc" -o -name "*.cpp" \))
+SOURCES := $(shell find $(C_SRC_DIR) -type f \( -name "*.c" \))
 OBJECTS = $(addsuffix .o, $(basename $(SOURCES)))
 
 COMPILE_C = $(c_verbose) $(CC) $(CFLAGS)
