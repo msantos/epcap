@@ -129,7 +129,13 @@ int restrict_process_capture() {
 #ifdef __NR_poll
       SC_ALLOW(poll),
 #endif
+#ifdef __NR_ppoll
+      SC_ALLOW(ppoll),
+#endif
 
+#ifdef __NR_rt_sigreturn
+      SC_ALLOW(rt_sigreturn),
+#endif
 #ifdef __NR_restart_syscall
       SC_ALLOW(restart_syscall),
 #endif
@@ -187,11 +193,17 @@ int restrict_process_supervisor() {
 #ifdef __NR_select
       SC_ALLOW(select),
 #endif
+#ifdef __NR_pselect6
+      SC_ALLOW(pselect6),
+#endif
 
 #ifdef __NR_poll
       SC_ALLOW(poll),
 #endif
 
+#ifdef __NR_rt_sigreturn
+      SC_ALLOW(rt_sigreturn),
+#endif
 #ifdef __NR_restart_syscall
       SC_ALLOW(restart_syscall),
 #endif
