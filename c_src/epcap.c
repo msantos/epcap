@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2020 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2009-2021 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,10 @@
 
 #ifdef RESTRICT_PROCESS_capsicum
 #include <sys/procdesc.h>
+#endif
+
+#ifdef __linux__
+#include <sys/prctl.h>
 #endif
 
 #include "epcap.h"
@@ -242,6 +246,11 @@ int main(int argc, char *argv[]) {
   case -1:
     exit(errno);
   case 0:
+#ifdef __linux__
+    if (prctl(PR_SET_PDEATHSIG, 9) < 0)
+      exit(errno);
+#endif
+
     if (dup2(fd, STDIN_FILENO) < 0)
       exit(errno);
 
