@@ -35,10 +35,6 @@
 #include <sys/procdesc.h>
 #endif
 
-#ifdef __linux__
-#include <sys/prctl.h>
-#endif
-
 #include "epcap.h"
 
 #define PIPE_READ 0

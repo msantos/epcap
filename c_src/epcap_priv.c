@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2020 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2009-2021 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,6 +74,11 @@ int epcap_priv_drop(EPCAP_STATE *ep) {
     return -1;
 
   if (setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid) < 0)
+    return -1;
+#endif
+
+#ifdef __linux__
+  if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
     return -1;
 #endif
 

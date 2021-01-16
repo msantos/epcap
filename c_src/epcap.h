@@ -41,6 +41,10 @@
 
 #include <pcap.h>
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 #if defined(__SVR4) && defined(__sun)
 #define u_int8_t uint8_t
 #define u_int16_t uint16_t
