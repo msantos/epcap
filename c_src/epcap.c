@@ -93,8 +93,10 @@ int main(int argc, char *argv[]) {
     switch (ch) {
     case 'b':
       ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, &errstr);
-      if (errstr)
+      if (errstr) {
+        VERBOSE(0, "%s, invalid buffer size (-b) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 'd': /* chroot directory */
       ep->chroot = strdup(optarg);
@@ -155,26 +157,34 @@ int main(int argc, char *argv[]) {
       break;
     case 's':
       ep->snaplen = strtonum(optarg, INT32_MIN, INT32_MAX, &errstr);
-      if (errstr)
+      if (errstr) {
+        VERBOSE(0, "%s, invalid snap length (-s) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 'T':
       ep->time_unit = strtonum(optarg, 0, 1, &errstr);
-      if (errstr)
+      if (errstr) {
+        VERBOSE(0, "%s, invalid time unit (-T) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 't':
       ep->timeout = strtonum(optarg, INT32_MIN, INT32_MAX, &errstr);
-      if (errstr)
+      if (errstr) {
+        VERBOSE(0, "%s, invalid timeout (-t) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 'I':
       if (strtonum(optarg, 0, 1, &errstr))
         ep->opt |= EPCAP_OPT_IMMEDIATE;
       else
         ep->opt &= ~EPCAP_OPT_IMMEDIATE;
-      if (errstr)
+      if (errstr) {
+        VERBOSE(0, "%s, invalid immediate mode (-I) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 'u':
       ep->user = strdup(optarg);
