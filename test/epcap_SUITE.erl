@@ -42,7 +42,11 @@
     filter_with_microsecond/1,
     filter_with_outbound/1,
     filter_with_inbound/1,
-    send/1
+    send/1,
+    timeout_immediate/1,
+    timeout_0/1,
+    timeout_3000/1,
+    timeout_infinity/1
 ]).
 
 all() ->
@@ -52,7 +56,11 @@ all() ->
         filter_with_microsecond,
         filter_with_outbound,
         filter_with_inbound,
-        send
+        send,
+        timeout_immediate,
+        timeout_0,
+        timeout_3000,
+        timeout_infinity
     ].
 
 suite() -> [{timetrap, {seconds, 60}}].
@@ -118,6 +126,34 @@ init_per_testcase(filter_with_inbound, Config) ->
                 {verbose, Verbose},
                 {filter, "tcp and ( port 29 or port 39 )"},
                 {direction, in},
+                promiscuous
+            ]
+    ),
+    [{drv, Drv} | Config];
+init_per_testcase(Test, Config) when Test > timeout_, Test < timeout_zzz ->
+    "timeout_" ++ TimeoutStr = atom_to_list(Test),
+    Timeout =
+        try
+            list_to_integer(TimeoutStr)
+        catch
+            _:_ -> list_to_atom(TimeoutStr)
+        end,
+    Dev =
+        case os:getenv("EPCAP_TEST_INTERFACE") of
+            false -> [];
+            N -> [{interface, N}]
+        end,
+    Verbose = list_to_integer(os:getenv("EPCAP_TEST_VERBOSE", "0")),
+    % Solaris pcap using DLPI requires the interface to be in promiscuous
+    % mode for outgoing packets to be captured
+    {ok, Drv} = epcap:start(
+        Dev ++
+            [
+                {exec, os:getenv("EPCAP_TEST_EXEC", "sudo -n")},
+                inject,
+                {verbose, Verbose},
+                {filter, "tcp and ( port 29 or port 39 )"},
+                {timeout, Timeout},
                 promiscuous
             ]
     ),
@@ -218,10 +254,10 @@ getopts(_Config) ->
         "-Q",
         "inout",
         "-t",
-        "0",
-        "-I",
         "1",
-        "-I",
+        "-t",
+        "-1",
+        "-t",
         "0",
         "-e",
         "FOO=bar",
@@ -245,10 +281,10 @@ getopts(_Config) ->
             inject,
             {direction, inout},
             {filter, "tcp and port 80"},
-            {timeout, 0},
+            {timeout, 1},
+            {timeout, infinity},
+            {timeout, immediate},
             {exec, "sudo -n"},
-            immediate,
-            {immediate, false},
             {env, "FOO=bar"}
         ]),
     "sudo" = filename:basename(Sudo),
@@ -324,6 +360,67 @@ filter_with_inbound(_Config) ->
     receive
         fail_when_some_received -> ok
     after 1000 -> ok
+    end.
+
+timeout_immediate(Config) ->
+    timeout(Config, 0).
+
+timeout_0(Config) ->
+    timeout(Config, 0).
+
+timeout_3000(Config) ->
+    timeout(Config, 3000).
+
+timeout(_Config, ExpDelay) ->
+    Start = erlang:monotonic_time(millisecond),
+    {error, _Reason} = gen_tcp:connect({8, 8, 8, 8}, 29, [binary], 500),
+    receive
+        {packet, DataLinkType, {A, B, C} = Time, Length, Packet} when
+            A > 0, B > 0, C > 0
+        ->
+            Stop = erlang:monotonic_time(millisecond),
+            ct:pal(
+                io_lib:format(
+                    "~p",
+                    [
+                        [
+                            {dlt, DataLinkType},
+                            {time, Time},
+                            {length, Length},
+                            {packet, Packet},
+                            {delay, Stop - Start}
+                        ]
+                    ]
+                )
+            ),
+            true = (Stop - Start) < ExpDelay + 1000,
+            [#ether{}, #ipv4{}, #tcp{dport = 29}, _Payload] = pkt:decapsulate(Packet)
+    end.
+
+timeout_infinity(_Config) ->
+    Start = erlang:monotonic_time(millisecond),
+    {error, _Reason} = gen_tcp:connect({8, 8, 8, 8}, 29, [binary], 500),
+    receive
+        {packet, DataLinkType, {A, B, C} = Time, Length, Packet} when
+            A > 0, B > 0, C > 0
+        ->
+            Stop = erlang:monotonic_time(millisecond),
+            ct:pal(
+                io_lib:format(
+                    "~p",
+                    [
+                        [
+                            {dlt, DataLinkType},
+                            {time, Time},
+                            {length, Length},
+                            {packet, Packet},
+                            {delay, Stop - Start}
+                        ]
+                    ]
+                )
+            ),
+            ct:fail("Unexpected packet (infinite timeout)")
+    after 5000 -> ok
     end.
 
 send(Config) ->

@@ -45,7 +45,7 @@ To compile the examples:
                             {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
                             {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()} |
                             {time_unit, microsecond | timestamp} | {direction, in | out | inout} |
-                            {timeout, pos_integer()}, {immediate, boolean()},
+                            {timeout, pos_integer() | infinity | immediate},
                             {env, string()}
 
         Packets are delivered as messages:
@@ -74,8 +74,10 @@ To compile the examples:
         structures. Using some multiple of the snapshot length is
         suggested. The timeout used when appending subsequent packets
         to the buffer can be controlled by the 'timeout' option on some
-        platforms (value in msecs), given that the 'immediate' option is
-        set to 'false' explicitly.
+        platforms (value in msecs), the special values 'infinity' (wait
+        until the pcap buffer is filled) and 'immediate' (do not wait
+        after the first packet). The value 0 is equivalent to
+        'immediate' which differs from the definition given in pcap(3PCAP).
 
     epcap:send(Ref, Packet) -> ok
 

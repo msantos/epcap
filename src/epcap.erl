@@ -214,7 +214,6 @@ handle_info(
     | monitor
     | promiscuous
     | verbose
-    | immediate
     | {buffer, arg_num()}
     | {chroot, string()}
     | {cluster_id, arg_num()}
@@ -228,7 +227,7 @@ handle_info(
     | {progname, string()}
     | {snaplen, arg_num()}
     | {time_unit, time_unit()}
-    | {timeout, arg_num()}
+    | {timeout, arg_num() | infinity | immediate}
     | {user, string()}
     | {verbose, arg_num()}
 ].
@@ -252,8 +251,8 @@ getopts(Options) when is_list(Options) ->
     Switches = Switches0 ++ [Filter],
     [Cmd | Argv] = [
         N
-        || N <- string:tokens(Exec, " ") ++ [Cpu_affinity, Progname | Switches],
-           N /= ""
+     || N <- string:tokens(Exec, " ") ++ [Cpu_affinity, Progname | Switches],
+        N /= ""
     ],
     [find_executable(Cmd) | Argv].
 
@@ -269,9 +268,9 @@ optarg(monitor) -> switch("M");
 optarg(promiscuous) -> switch("P");
 optarg({snaplen, Arg}) -> switch("s", maybe_string(Arg));
 optarg({time_unit, Arg}) -> switch("T", time_unit(Arg));
+optarg({timeout, immediate}) -> switch("t", "0");
+optarg({timeout, infinity}) -> switch("t", "-1");
 optarg({timeout, Arg}) -> switch("t", maybe_string(Arg));
-optarg(immediate) -> switch("I", "1");
-optarg({immediate, false}) -> switch("I", "0");
 optarg({user, Arg}) -> switch("u", Arg);
 optarg(verbose) -> switch("v");
 optarg({verbose, 0}) -> "";
