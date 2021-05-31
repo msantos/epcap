@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
   EPCAP_STATE *ep = NULL;
   int ch = 0;
   int fd = 0;
+  const char *errstr = NULL;
 
 #ifndef HAVE_SETPROCTITLE
   spt_init(argc, argv);
@@ -91,9 +92,11 @@ int main(int argc, char *argv[]) {
   while ((ch = getopt(argc, argv, "b:d:e:f:g:hi:MPs:T:t:u:Q:vX")) != -1) {
     switch (ch) {
     case 'b':
-      ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
-      if (errno)
+      ep->bufsz = strtonum(optarg, INT32_MIN, INT32_MAX, &errstr);
+      if (errstr) {
+        VERBOSE(0, "%s, invalid buffer size (-b) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 'd': /* chroot directory */
       ep->chroot = strdup(optarg);
@@ -153,19 +156,25 @@ int main(int argc, char *argv[]) {
       ep->opt |= EPCAP_OPT_PROMISC;
       break;
     case 's':
-      ep->snaplen = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
-      if (errno)
+      ep->snaplen = strtonum(optarg, INT32_MIN, INT32_MAX, &errstr);
+      if (errstr) {
+        VERBOSE(0, "%s, invalid snap length (-s) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 'T':
-      ep->time_unit = strtonum(optarg, 0, 1, NULL);
-      if (errno)
+      ep->time_unit = strtonum(optarg, 0, 1, &errstr);
+      if (errstr) {
+        VERBOSE(0, "%s, invalid time unit (-T) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       break;
     case 't':
-      ep->timeout = strtonum(optarg, INT32_MIN, INT32_MAX, NULL);
-      if (errno)
+      ep->timeout = strtonum(optarg, INT32_MIN, INT32_MAX, &errstr);
+      if (errstr) {
+        VERBOSE(0, "%s, invalid timeout (-t) value: %s\n", __progname, errstr);
         exit(errno);
+      }
       if (ep->timeout < 0)
         ep->timeout = INT32_MAX;
       if (ep->timeout == 0)
