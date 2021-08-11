@@ -177,8 +177,10 @@ int main(int argc, char *argv[]) {
       }
       if (ep->timeout < 0)
         ep->timeout = INT32_MAX;
-      if (ep->timeout == 0)
+      if (ep->timeout == 0) {
         ep->opt |= EPCAP_OPT_IMMEDIATE;
+        ep->timeout = TIMEOUT;
+      }
       else
         ep->opt &= ~EPCAP_OPT_IMMEDIATE;
       break;
