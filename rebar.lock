@@ -1,4 +1,8 @@
-[{<<"pkt">>,
-  {git,"https://github.com/msantos/pkt.git",
-       {ref,"a81fe923d027133d338b060e70e4cddd851ed362"}},
-  0}].
+{"1.2.0",
+[{<<"pkt">>,{pkg,<<"pkt">>,<<"0.6.0">>},0}]}.
+[
+{pkg_hash,[
+ {<<"pkt">>, <<"F4B73090FC7C71CC7F4AFC172537BBEC80BDC981365F04017D6F02814ACC8399">>}]},
+{pkg_hash_ext,[
+ {<<"pkt">>, <<"3FF876782E7D5EC06643038843203C7F5F77BABE35F29BFB95B4935BACBC32AC">>}]}
+].
