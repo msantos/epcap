@@ -11,3 +11,4 @@ Session.vim
 c_src/*.d
 _build/
 .rebar3/
+doc/

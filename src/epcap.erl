@@ -1,4 +1,4 @@
-%%% @copyright 2009-2020 Michael Santos <michael.santos@gmail.com>
+%%% @copyright 2009-2023 Michael Santos <michael.santos@gmail.com>
 %%% All rights reserved.
 %%%
 %%% Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,102 @@
 %%% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+%% @doc An Erlang port interface to libpcap.
+%%
+%% == SETUP ==
+%%
+%% ```
+%% # Allow your user to epcap with root privs
+%% sudo visudo
+%% youruser ALL = NOPASSWD: /path/to/epcap/priv/epcap
+%% # And if requiretty is enabled, disable it by using one of these
+%% Defaults!/path/to/epcap/priv/epcap !requiretty
+%% Defaults:youruser !requiretty
+%% '''
+%%
+%% == EXAMPLES ==
+%%
+%% To run the `sniff' example:
+%%
+%% ```
+%% $ mkdir -p ebin
+%% $ erlc +debug_info -I _build/default/lib -o ebin examples/*.erl
+%% '''
+%%
+%% ```
+%% rebar3 shell
+%%
+%% % Start the sniffer process
+%% sniff:start_link().
+%%
+%% % Use your interface, or leave it out and trust in pcap
+%% sniff:start([{interface, "eth0"}]).
+%%
+%% % To change the filter
+%% sniff:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"}]).
+%%
+%% % To stop sniffing
+%% sniff:stop().
+%% '''
+%%
+%% == PF_RING ==
+%%
+%% In case you want to compile epcap with PF_RING support, just specify
+%% the path to the libpfring and modified libpcap libraries via shell
+%% variable PFRING.
+%%
+%% ```
+%% PFRING=/home/user/pfring make
+%% '''
+%%
+%% To complete the configuration you need to set up the cluster_id
+%% option. The value of the cluster_id option is integer and should be in
+%% range between 0 and 255.
+%%
+%% ```
+%% epcap:start_link([{interface, "lo"}, {cluster_id, 2}]).
+%% '''
+%%
+%% You can also specify the option cpu_affinity to set up CPU affinity for
+%% epcap port:
+%%
+%% ```
+%% epcap:start_link([{interface, "lo"}, {cluster_id, 2}, {cpu_affinity, "1,3,5-7"}]).
+%% '''
+%%
+%% == PROCESS RESTRICTIONS ==
+%%
+%% Setting the `RESTRICT_PROCESS' environment variable controls which
+%% mode of process restriction is used. The available modes are:
+%% 
+%% * seccomp: linux
+%% 
+%% * pledge: openbsd (default)
+%% 
+%% * capsicum: freebsd (default)
+%% 
+%% * rlimit: all (default: linux)
+%% 
+%% * null: all
+%% 
+%% For example, to force using the seccomp process restriction on linux:
+%% 
+%% ```
+%% RESTRICT_PROCESS=rlimit rebar3 do clean, compile
+%% '''
+%% 
+%% The `null' mode disables process restrictions and can be used for debugging.
+%% 
+%% ```
+%% RESTRICT_PROCESS=null rebar3 do clean, compile
+%% 
+%% epcap:start([{exec, "sudo strace -f -s 4096 -o rlimit.trace"}, {filter, "port 9997"}]).
+%% 
+%% RESTRICT_PROCESS=seccomp make clean all
+%% 
+%% epcap:start([{exec, "sudo strace -f -s 4096 -o seccomp.trace"}, {filter, "port 9997"}]).
+%% '''
 -module(epcap).
 
 -behaviour(gen_server).
@@ -56,28 +152,33 @@
 
 -type time_unit() :: timestamp | microsecond.
 
-%% @doc start the epcap port process
+%% @doc Start the epcap port process.
+%% @see start_link/2
 -spec start() -> ignore | {error, _} | {ok, pid()}.
 start() -> start(self(), []).
 
-%% @doc start the epcap port process
+%% @doc Start the epcap port process with options.
+%% @see start_link/2
 -spec start(options()) -> ignore | {error, _} | {ok, pid()}.
 start(Options) -> start(self(), Options).
 
-%% @doc start the epcap port process
+%% @doc Start the epcap port process with owner and options.
+%% @see start_link/2
 -spec start(pid(), options()) -> ignore | {error, _} | {ok, pid()}.
 start(Pid, Options) when is_pid(Pid), is_list(Options) ->
     gen_server:start(?MODULE, [Pid, Options], []).
 
-%% @doc start and link with the epcap port process
+%% @doc Start and link with the epcap port process.
+%% @see start_link/2
 -spec start_link() -> ignore | {error, _} | {ok, pid()}.
 start_link() -> start_link(self(), []).
 
-%% @doc start and link with the epcap port process
+%% @doc Start and link with the epcap port process.
+%% @see start_link/2
 -spec start_link(options()) -> ignore | {error, _} | {ok, pid()}.
 start_link(Options) -> start_link(self(), Options).
 
-%% @doc start and link with the epcap port process
+%% @doc Start and link with the epcap port process.
 %%
 %% Packets are delivered as messages:
 %%
@@ -108,6 +209,31 @@ start_link(Options) -> start_link(self(), Options).
 %% length (default: 65535) plus some overhead for the pcap data
 %% structures. Using some multiple of the snapshot length is
 %% suggested.
+%%
+%% == Examples ==
+%%
+%% ```
+%% 1> epcap:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"}]).
+%% {ok,<0.197.0>}
+%% 2> flush().
+%% Shell got {packet,1,
+%%                   {1693,57279,417781},
+%%                   98,
+%%                   <<0,22,62,179,157,38,0,22,62,91,72,102,8,0,69,0,0,84,231,22,
+%%                     64,0,64,1,130,73,100,115,92,198,8,8,8,8,8,0,164,231,23,
+%%                     127,0,1,255,0,234,100,0,0,0,0,141,95,6,0,0,0,0,0,16,17,18,
+%%                     19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,
+%%                     38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55>>}
+%% Shell got {packet,1,
+%%                   {1693,57279,450447},
+%%                   98,
+%%                   <<0,22,62,91,72,102,0,22,62,179,157,38,8,0,69,0,0,84,0,0,0,
+%%                     0,115,1,118,96,8,8,8,8,100,115,92,198,0,0,172,231,23,127,
+%%                     0,1,255,0,234,100,0,0,0,0,141,95,6,0,0,0,0,0,16,17,18,19,
+%%                     20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,
+%%                     39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55>>}
+%% ok
+%% '''
 -spec start_link(pid(), options()) -> ignore | {error, _} | {ok, pid()}.
 start_link(Pid, Options) -> gen_server:start_link(?MODULE, [Pid, Options], []).
 
@@ -116,9 +242,24 @@ start_link(Pid, Options) -> gen_server:start_link(?MODULE, [Pid, Options], []).
 %% To enable sending packets, start_link/1 must be called with the
 %% `{inject, true}' option (default: `{inject, false}'). When disabled,
 %% any data sent to the epcap port is silently discarded. Packet injection
-%% failures are treated as fatal errors, terminating the epcap port. Partial
+%% failures are treated as fatal errors terminating the epcap port. Partial
 %% writes are not considered to be errors and are ignored (an error message
 %% will be printed to stderr if the verbose option is used).
+%%
+%% == Examples ==
+%%
+%% ```
+%% 1> {ok, Port} = epcap:start([inject]).
+%% {ok,<0.197.0>}
+%% 2> {packet, _, _, _, Packet} = receive N -> N end.
+%% {packet,1,
+%%         {1693,58033,222196},
+%%         74,
+%%         <<0,22,62,179,157,38,0,22,62,91,72,102,8,0,69,0,0,60,205,
+%%           40,64,0,64,6,...>>}
+%% 3> epcap:send(Port, Packet).
+%% ok
+%% '''
 -spec send(pid(), iodata()) -> ok.
 send(Pid, Packet) when is_pid(Pid) ->
     case iolist_size(Packet) < 65535 of
@@ -126,11 +267,22 @@ send(Pid, Packet) when is_pid(Pid) ->
         false -> erlang:error(badarg)
     end.
 
+%% @doc Stop the epcap port.
+%%
+%% == Examples ==
+%%
+%% ```
+%% 1> {ok, Port} = epcap:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"}]).
+%% {ok,<0.205.0>}
+%% 2> epcap:stop(Port).
+%% ok
+%% '''
 -spec stop(pid()) -> ok.
 stop(Pid) ->
     catch gen_server:call(Pid, stop),
     ok.
 
+%% @private
 init([Pid, Options0]) ->
     process_flag(trap_exit, true),
     Options = setopts(
@@ -163,6 +315,7 @@ init([Pid, Options0]) ->
             {stop, {error, Reason}}
     end.
 
+%% @private
 handle_call({send, Packet}, _From, #state{port = Port} = State) ->
     Reply =
         try erlang:port_command(Port, Packet) of
@@ -174,17 +327,22 @@ handle_call({send, Packet}, _From, #state{port = Port} = State) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
+%% @private
 handle_cast(_Msg, State) -> {noreply, State}.
 
+%% @private
 terminate(_Reason, #state{port = Port}) ->
     catch erlang:port_close(Port),
     ok.
 
+%% @private
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
 %%% Port communication
 %%--------------------------------------------------------------------
+
+%% @private
 handle_info({Port, {data, Data}}, #state{port = Port, pid = Pid} = State) ->
     Pid ! binary_to_term(Data),
     {noreply, State};
@@ -241,6 +399,7 @@ setopts([{Key, Val} | Rest], Options) ->
         _ -> setopts(Rest, Options)
     end.
 
+%% @private
 -spec getopts(options()) -> [string()].
 getopts(Options) when is_list(Options) ->
     Exec = exec(Options),
