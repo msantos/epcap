@@ -73,7 +73,7 @@
 %% variable PFRING.
 %%
 %% ```
-%% PFRING=/home/user/pfring make
+%% PFRING=/home/user/pfring rebar3 do clean, compile
 %% '''
 %%
 %% To complete the configuration you need to set up the cluster_id
@@ -119,7 +119,7 @@
 %% 
 %% epcap:start([{exec, "sudo strace -f -s 4096 -o rlimit.trace"}, {filter, "port 9997"}]).
 %% 
-%% RESTRICT_PROCESS=seccomp make clean all
+%% RESTRICT_PROCESS=seccomp rebar3 do clean, compile
 %% 
 %% epcap:start([{exec, "sudo strace -f -s 4096 -o seccomp.trace"}, {filter, "port 9997"}]).
 %% '''

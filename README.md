@@ -5,13 +5,14 @@ epcap includes a small example program called sniff.
 ## QUICK SETUP
 
 ```
-$ rebar3 compile # or: make
+$ rebar3 compile
 ```
 
 To compile the examples:
 
 ```
-$ make examples
+$ mkdir -p ebin
+$ erlc +debug_info -I _build/default/lib -o ebin examples/*.erl
 
 # Allow your user to epcap with root privs
 sudo visudo
@@ -106,7 +107,7 @@ the path to the libpfring and modified libpcap libraries via shell
 variable PFRING.
 
 ```
-PFRING=/home/user/pfring make
+PFRING=/home/user/pfring rebar3 do clean, compile
 ```
 
 To complete the configuration you need to set up the cluster_id option.
@@ -152,7 +153,7 @@ RESTRICT_PROCESS=null rebar3 do clean, compile
 
 epcap:start([{exec, "sudo strace -f -s 4096 -o rlimit.trace"}, {filter, "port 9997"}]).
 
-RESTRICT_PROCESS=seccomp make clean all
+RESTRICT_PROCESS=seccomp rebar3 do clean, compile
 
 epcap:start([{exec, "sudo strace -f -s 4096 -o seccomp.trace"}, {filter, "port 9997"}]).
 ```
