@@ -1,3 +1,6 @@
+[![Package Version](https://img.shields.io/hexpm/v/epcap)](https://hex.pm/packages/epcap)
+[![Hex Docs](https://img.shields.io/badge/hex-docs)](https://hexdocs.pm/epcap/)
+
 An Erlang port interface to libpcap.
 
 epcap includes a small example program called sniff.
