@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2020 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2009-2025 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -115,8 +115,8 @@ typedef struct {
 int epcap_priv_drop(EPCAP_STATE *);
 int epcap_priv_runasuser(EPCAP_STATE *ep);
 
-int restrict_process_capture();
-int restrict_process_supervisor();
+int restrict_process_capture(void);
+int restrict_process_supervisor(void);
 
 #ifndef HAVE_STRTONUM
 long long strtonum(const char *numstr, long long minval, long long maxval,
