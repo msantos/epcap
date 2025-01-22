@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2020 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2017-2025 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 #include "epcap.h"
 #include <pcap/pcap.h>
 
-int restrict_process_capture() {
+int restrict_process_capture(void) {
   struct rlimit rl = {0};
   cap_rights_t policy_read;
   cap_rights_t policy_null;
@@ -80,7 +80,7 @@ int restrict_process_capture() {
   return cap_enter();
 }
 
-int restrict_process_supervisor() {
+int restrict_process_supervisor(void) {
   struct rlimit rl = {0};
   cap_rights_t policy_read;
   cap_rights_t policy_write;
