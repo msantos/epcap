@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2020 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2018-2025 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 #include "epcap.h"
 #include <unistd.h>
 
-int restrict_process_capture() { return pledge("stdio", NULL); }
+int restrict_process_capture(void) { return pledge("stdio", NULL); }
 
-int restrict_process_supervisor() { return pledge("stdio proc", NULL); }
+int restrict_process_supervisor(void) { return pledge("stdio proc", NULL); }
 #endif
