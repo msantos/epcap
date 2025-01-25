@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2023 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2017-2025 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 
 static int fdlimit(int lowfd);
 
-int restrict_process_capture() {
+int restrict_process_capture(void) {
   struct rlimit rl = {0};
   int maxfd;
 
@@ -55,7 +55,7 @@ int restrict_process_capture() {
   return 0;
 }
 
-int restrict_process_supervisor() {
+int restrict_process_supervisor(void) {
   struct rlimit rl = {0};
 
   if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
