@@ -1,4 +1,4 @@
-/* Copyright (c) 2018-2020 Michael Santos <michael.santos@gmail.com>. All
+/* Copyright (c) 2018-2025 Michael Santos <michael.santos@gmail.com>. All
  * rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@
 #define SECCOMP_AUDIT_ARCH 0
 #endif
 
-int restrict_process_capture() {
+int restrict_process_capture(void) {
   struct sock_filter filter[] = {
       /* Ensure the syscall arch convention is as expected. */
       BPF_STMT(BPF_LD + BPF_W + BPF_ABS, offsetof(struct seccomp_data, arch)),
@@ -154,7 +154,7 @@ int restrict_process_capture() {
   return prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog);
 }
 
-int restrict_process_supervisor() {
+int restrict_process_supervisor(void) {
   struct sock_filter filter[] = {
       /* Ensure the syscall arch convention is as expected. */
       BPF_STMT(BPF_LD + BPF_W + BPF_ABS, offsetof(struct seccomp_data, arch)),
