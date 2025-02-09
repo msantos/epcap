@@ -38,18 +38,18 @@ int restrict_process_capture(void) {
   struct rlimit rl = {0};
   int maxfd;
 
+  if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
+    return -1;
+
+  if (setrlimit(RLIMIT_NPROC, &rl) != 0)
+    return -1;
+
   maxfd = fdlimit(STDERR_FILENO);
 
   rl.rlim_cur = maxfd;
   rl.rlim_max = maxfd;
 
   if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
-    return -1;
-
-  if (setrlimit(RLIMIT_FSIZE, &rl) != 0)
-    return -1;
-
-  if (setrlimit(RLIMIT_NPROC, &rl) != 0)
     return -1;
 
   return 0;
