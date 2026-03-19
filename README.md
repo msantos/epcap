@@ -5,6 +5,10 @@ An Erlang port interface to libpcap.
 
 epcap includes a small example program called sniff.
 
+## DOCUMENTATION
+
+https://hexdocs.pm/epcap/
+
 ## QUICK SETUP
 
 ```
@@ -37,70 +41,6 @@ sniff:start([{filter, "icmp or (tcp and port 80)"},{interface, "eth0"}]).
 
 % To stop sniffing
 sniff:stop().
-```
-
-## USAGE
-
-```
-epcap:start() -> {ok, pid()}
-epcap:start(Args) -> {ok, pid()}
-epcap:start_link() -> {ok, pid()}
-epcap:start_link(Args) -> {ok, pid()}
-
-    Types   Args = [Options]
-            Options = {chroot, string()} | {group, string()} | {interface, string()} | {promiscuous, boolean()} |
-                        {user, string()} | {filter, string()} | {progname, string()} | {file, string()} |
-                        {monitor, boolean()} | {cpu_affinity, string()} | {cluster_id, non_neg_integer()}} |
-                        {inject, boolean()} | {snaplen, non_neg_integer} | {buffer, non_neg_integer()} |
-                        {time_unit, microsecond | timestamp} | {direction, in | out | inout} |
-                        {timeout, pos_integer() | infinity | immediate},
-                        {env, string()}
-
-    Packets are delivered as messages:
-
-        {packet, DataLinkType, Time, Length, Packet}
-
-    The DataLinkType is an integer representing the link layer,
-    e.g., ethernet, Linux cooked socket.
-
-    The Time can be either in microseconds or a timestamp in the same
-    format as erlang:now/0 depending on the value of the time_unit
-    option (default: timestamp):
-
-    {MegaSecs, Secs, MicroSecs}
-
-    The Length corresponds to the actual packet length on the
-    wire. The captured packet may have been truncated. To get the
-    captured packet length, use byte_size(Packet).
-
-    The Packet is a binary holding the captured data.
-
-    If the version of the pcap library supports it, the pcap buffer
-    size can be set to avoid dropped packets by using the 'buffer'
-    option. The buffer size must be larger than the snapshot
-    length (default: 65535) plus some overhead for the pcap data
-    structures. Using some multiple of the snapshot length is
-    suggested. The timeout used when appending subsequent packets
-    to the buffer can be controlled by the 'timeout' option on some
-    platforms (value in msecs), the special values 'infinity' (wait
-    until the pcap buffer is filled) and 'immediate' (do not wait
-    after the first packet). The value 0 is equivalent to
-    'immediate' which differs from the definition given in pcap(3PCAP).
-
-epcap:send(Ref, Packet) -> ok
-
-    Types   Ref = pid()
-            Packet = binary()
-
-    Inject a packet on the network interface. To enable sending
-    packets, start_link/1 must be called with the {inject, true} option
-    (default: {inject, false}). When disabled, any data sent
-    to the epcap port is silently discarded.
-
-    Packet injection failures are treated as fatal errors, terminating
-    the epcap port. Partial writes are not considered to be errors
-    and are ignored (an error message will be printed to stderr if
-    the verbose option is used).
 ```
 
 ## PF_RING
