@@ -11,13 +11,13 @@ https://hexdocs.pm/epcap/
 
 ## QUICK SETUP
 
-```
+```bash
 $ rebar3 compile
 ```
 
 To compile the examples:
 
-```
+```bash
 $ mkdir -p ebin
 $ erlc +debug_info -I _build/default/lib -o ebin examples/*.erl
 
@@ -49,7 +49,7 @@ In case you want to compile epcap with PF_RING support, just specify
 the path to the libpfring and modified libpcap libraries via shell
 variable PFRING.
 
-```
+```bash
 PFRING=/home/user/pfring rebar3 do clean, compile
 ```
 
@@ -57,14 +57,14 @@ To complete the configuration you need to set up the cluster_id option.
 The value of the cluster_id option is integer and should be in range
 between 0 and 255.
 
-```
+```bash
 epcap:start_link([{interface, "lo"}, {cluster_id, 2}]).
 ```
 
 You can also specify the option cpu_affinity to set up CPU affinity for
 epcap port:
 
-```
+```bash
 epcap:start_link([{interface, "lo"}, {cluster_id, 2}, {cpu_affinity, "1,3,5-7"}]).
 ```
 
@@ -85,13 +85,13 @@ mode of process restriction is used. The available modes are:
 
 For example, to force using the seccomp process restriction on linux:
 
-```
+```bash
 RESTRICT_PROCESS=rlimit rebar3 do clean, compile
 ```
 
 The `null` mode disables process restrictions and can be used for debugging.
 
-```
+```bash
 RESTRICT_PROCESS=null rebar3 do clean, compile
 
 epcap:start([{exec, "sudo strace -f -s 4096 -o rlimit.trace"}, {filter, "port 9997"}]).
@@ -103,7 +103,7 @@ epcap:start([{exec, "sudo strace -f -s 4096 -o seccomp.trace"}, {filter, "port 9
 
 ## SCREENSHOT
 
-```
+```erlang
 =INFO REPORT==== 27-Oct-2013::11:47:43 ===
     pcap: [{time,"2013-10-27 11:47:43"},
            {caplen,653},
