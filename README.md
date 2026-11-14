@@ -132,5 +132,4 @@ production system:
 ## TODO
 
 * return error atoms/tuples instead of using errx
-
 * add support for retrieving packet statistics using pcap\_stats(3PCAP)
