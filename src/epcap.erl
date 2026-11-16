@@ -95,32 +95,32 @@
 %%
 %% Setting the `RESTRICT_PROCESS' environment variable controls which
 %% mode of process restriction is used. The available modes are:
-%% 
+%%
 %% * seccomp: linux
-%% 
+%%
 %% * pledge: openbsd (default)
-%% 
+%%
 %% * capsicum: freebsd (default)
-%% 
+%%
 %% * rlimit: all (default: linux)
-%% 
+%%
 %% * null: all
-%% 
+%%
 %% For example, to force using the seccomp process restriction on linux:
-%% 
+%%
 %% ```
 %% RESTRICT_PROCESS=rlimit rebar3 do clean, compile
 %% '''
-%% 
+%%
 %% The `null' mode disables process restrictions and can be used for debugging.
-%% 
+%%
 %% ```
 %% RESTRICT_PROCESS=null rebar3 do clean, compile
-%% 
+%%
 %% epcap:start([{exec, "sudo strace -f -s 4096 -o rlimit.trace"}, {filter, "port 9997"}]).
-%% 
+%%
 %% RESTRICT_PROCESS=seccomp rebar3 do clean, compile
-%% 
+%%
 %% epcap:start([{exec, "sudo strace -f -s 4096 -o seccomp.trace"}, {filter, "port 9997"}]).
 %% '''
 -module(epcap).
