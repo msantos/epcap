@@ -3,7 +3,7 @@
 
 An Erlang port interface to libpcap.
 
-epcap includes a small example program called sniff.
+epcap includes a small example program called [sniff](examples/sniff.erl).
 
 ## DOCUMENTATION
 
