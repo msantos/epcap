@@ -46,9 +46,12 @@
 
 -define(is_print(C), C >= $\s, C =< $~).
 
--record(state,
-        {pid, crash = true,
-         format = []}). % full packet dump: binary, hex
+-record(state, {
+    pid,
+    crash = true,
+    % full packet dump: binary, hex
+    format = []
+}).
 
 %%--------------------------------------------------------------------
 %%% Interface
@@ -66,19 +69,31 @@ stop() -> gen_statem:cast(?MODULE, stop).
 %%--------------------------------------------------------------------
 callback_mode() -> state_functions.
 
-init([]) -> process_flag(trap_exit, true), {ok, waiting, #state{}}.
+init([]) ->
+    process_flag(trap_exit, true),
+    {ok, waiting, #state{}}.
 
 %%
 %% State: sniffing
 %%
-handle_info({packet, DLT, Time, Len, Data}, sniffing,
-            #state{format = Format} = State) ->
+handle_info(
+    {packet, DLT, Time, Len, Data},
+    sniffing,
+    #state{format = Format} = State
+) ->
     Packet = decode(DLT, Data, State),
     Headers = header(Packet),
-    error_logger:info_report([{pcap,
-                               [{time, timestamp(Time)}, {caplen, byte_size(Data)}, {len, Len},
-                                {datalink, pkt:dlt(DLT)}]}]
-                               ++ Headers ++ packet(Format, Data)),
+    error_logger:info_report(
+        [
+            {pcap, [
+                {time, timestamp(Time)},
+                {caplen, byte_size(Data)},
+                {len, Len},
+                {datalink, pkt:dlt(DLT)}
+            ]}
+        ] ++
+            Headers ++ packet(Format, Data)
+    ),
     {next_state, sniffing, State};
 % epcap port stopped
 handle_info({'EXIT', _Pid, normal}, sniffing, State) ->
@@ -101,17 +116,19 @@ waiting(cast, {start, Opt}, State) ->
     Format = proplists:get_value(format, Opt, []),
     Snaplen = proplists:get_value(snaplen, Opt),
     {ok, Pid} = epcap:start_link(Opt),
-    {next_state, sniffing,
-     State#state{pid = Pid, format = Format, crash = Snaplen =:= undefined}};
-waiting(info, Event, State) -> handle_info(Event, waiting, State).
+    {next_state, sniffing, State#state{pid = Pid, format = Format, crash = Snaplen =:= undefined}};
+waiting(info, Event, State) ->
+    handle_info(Event, waiting, State).
 
 sniffing(cast, {start, Opt}, #state{pid = Pid} = State) ->
     epcap:stop(Pid),
     {ok, Pid1} = epcap:start_link(Opt),
     {next_state, sniffing, State#state{pid = Pid1}};
 sniffing(cast, stop, #state{pid = Pid} = State) ->
-    epcap:stop(Pid), {next_state, waiting, State};
-sniffing(info, Event, State) -> handle_info(Event, sniffing, State).
+    epcap:stop(Pid),
+    {next_state, waiting, State};
+sniffing(info, Event, State) ->
+    handle_info(Event, sniffing, State).
 
 %%--------------------------------------------------------------------
 %%% Internal functions
@@ -120,48 +137,101 @@ decode(DLT, Data, #state{crash = true}) ->
     pkt:decapsulate({pkt:dlt(DLT), Data});
 decode(DLT, Data, #state{crash = false}) ->
     case pkt:decode(pkt:dlt(DLT), Data) of
-      {ok, {Headers, Payload}} -> Headers ++ [Payload];
-      {error, SoFar, _Failed} -> SoFar
+        {ok, {Headers, Payload}} -> Headers ++ [Payload];
+        {error, SoFar, _Failed} -> SoFar
     end.
 
 header(Payload) -> header(Payload, []).
 
-header([], Acc) -> lists:reverse(Acc);
+header([], Acc) ->
+    lists:reverse(Acc);
 header([#ether{shost = Shost, dhost = Dhost} | Rest], Acc) ->
-    header(Rest,
-           [{ether,
-             [{source_macaddr, ether_addr(Shost)}, {destination_macaddr, ether_addr(Dhost)}]}
-            | Acc]);
+    header(
+        Rest,
+        [
+            {ether, [{source_macaddr, ether_addr(Shost)}, {destination_macaddr, ether_addr(Dhost)}]}
+            | Acc
+        ]
+    );
 header([#ipv4{saddr = Saddr, daddr = Daddr, p = Proto} | Rest], Acc) ->
-    header(Rest,
-           [{ipv4,
-             [{protocol, pkt:proto(Proto)}, {source_address, inet_parse:ntoa(Saddr)},
-              {destination_address, inet_parse:ntoa(Daddr)}]}
-            | Acc]);
+    header(
+        Rest,
+        [
+            {ipv4, [
+                {protocol, pkt:proto(Proto)},
+                {source_address, inet_parse:ntoa(Saddr)},
+                {destination_address, inet_parse:ntoa(Daddr)}
+            ]}
+            | Acc
+        ]
+    );
 header([#ipv6{saddr = Saddr, daddr = Daddr, next = Proto} | Rest], Acc) ->
-    header(Rest,
-           [{ipv6,
-             [{protocol, pkt:proto(Proto)}, {source_address, inet_parse:ntoa(Saddr)},
-              {destination_address, inet_parse:ntoa(Daddr)}]}
-            | Acc]);
-header([#tcp{sport = Sport, dport = Dport, ackno = Ackno, seqno = Seqno,
-             win = Win, cwr = CWR, ece = ECE, urg = URG, ack = ACK, psh = PSH, rst = RST,
-             syn = SYN, fin = FIN}
-        | Rest],
-       Acc) ->
-    Flags = [F
-             || {F, V}
-                    <- [{cwr, CWR}, {ece, ECE}, {urg, URG}, {ack, ACK}, {psh, PSH}, {rst, RST},
-                        {syn, SYN}, {fin, FIN}],
-                V =:= 1],
-    header(Rest,
-           [{tcp,
-             [{source_port, Sport}, {destination_port, Dport}, {flags, Flags}, {seq, Seqno},
-              {ack, Ackno}, {win, Win}]}
-            | Acc]);
+    header(
+        Rest,
+        [
+            {ipv6, [
+                {protocol, pkt:proto(Proto)},
+                {source_address, inet_parse:ntoa(Saddr)},
+                {destination_address, inet_parse:ntoa(Daddr)}
+            ]}
+            | Acc
+        ]
+    );
+header(
+    [
+        #tcp{
+            sport = Sport,
+            dport = Dport,
+            ackno = Ackno,
+            seqno = Seqno,
+            win = Win,
+            cwr = CWR,
+            ece = ECE,
+            urg = URG,
+            ack = ACK,
+            psh = PSH,
+            rst = RST,
+            syn = SYN,
+            fin = FIN
+        }
+        | Rest
+    ],
+    Acc
+) ->
+    Flags = [
+        F
+     || {F, V} <-
+            [
+                {cwr, CWR},
+                {ece, ECE},
+                {urg, URG},
+                {ack, ACK},
+                {psh, PSH},
+                {rst, RST},
+                {syn, SYN},
+                {fin, FIN}
+            ],
+        V =:= 1
+    ],
+    header(
+        Rest,
+        [
+            {tcp, [
+                {source_port, Sport},
+                {destination_port, Dport},
+                {flags, Flags},
+                {seq, Seqno},
+                {ack, Ackno},
+                {win, Win}
+            ]}
+            | Acc
+        ]
+    );
 header([#udp{sport = Sport, dport = Dport, ulen = Ulen} | Rest], Acc) ->
-    header(Rest,
-           [{udp, [{source_port, Sport}, {destination_port, Dport}, {ulen, Ulen}]} | Acc]);
+    header(
+        Rest,
+        [{udp, [{source_port, Sport}, {destination_port, Dport}, {ulen, Ulen}]} | Acc]
+    );
 header([#icmp{type = Type, code = Code} | Rest], Acc) ->
     header(Rest, [{icmp, [{type, Type}, {code, Code}]} | Acc]);
 header([#icmp6{type = Type, code = Code} | Rest], Acc) ->
@@ -169,15 +239,16 @@ header([#icmp6{type = Type, code = Code} | Rest], Acc) ->
 header([Hdr | Rest], Acc) when is_tuple(Hdr) ->
     header(Rest, [{header, Hdr} | Acc]);
 header([Payload | Rest], Acc) when is_binary(Payload) ->
-    header(Rest,
-           [{payload, to_ascii(Payload)}, {payload_size, byte_size(Payload)} | Acc]).
+    header(
+        Rest,
+        [{payload, to_ascii(Payload)}, {payload_size, byte_size(Payload)} | Acc]
+    ).
 
 packet(Format, Bin) -> packet(Format, Bin, []).
 
 packet([], _Bin, Acc) -> lists:reverse(Acc);
 packet([binary | Rest], Bin, Acc) -> packet(Rest, Bin, [{packet, Bin} | Acc]);
-packet([hex | Rest], Bin, Acc) ->
-    packet(Rest, Bin, [{packet, to_hex(Bin)} | Acc]).
+packet([hex | Rest], Bin, Acc) -> packet(Rest, Bin, [{packet, to_hex(Bin)} | Acc]).
 
 to_ascii(Bin) when is_binary(Bin) -> [to_ascii(C) || <<C:8>> <= Bin];
 to_ascii(C) when ?is_print(C) -> C;
@@ -192,6 +263,9 @@ timestamp(Now) when is_tuple(Now) ->
 
 iso_8601_fmt(DateTime) ->
     {{Year, Month, Day}, {Hour, Min, Sec}} = DateTime,
-    lists:flatten(io_lib:format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
-                                [Year, Month, Day, Hour, Min, Sec])).
-
+    lists:flatten(
+        io_lib:format(
+            "~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
+            [Year, Month, Day, Hour, Min, Sec]
+        )
+    ).

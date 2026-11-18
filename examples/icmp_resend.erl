@@ -55,13 +55,17 @@
 start(Dev) -> start(Dev, 0).
 
 start(Dev, Verbose) ->
-    {ok, Ref} = epcap:start_link([{verbose, Verbose}, {interface, Dev}, inject,
-                                  {filter, "icmp"}]),
+    {ok, Ref} = epcap:start_link([
+        {verbose, Verbose},
+        {interface, Dev},
+        inject,
+        {filter, "icmp"}
+    ]),
     resend(Ref).
 
 resend(Ref) ->
     receive
-      {packet, _DataLinkType, _Time, _Length, Packet} ->
-          ok = epcap:send(Ref, Packet), resend(Ref)
+        {packet, _DataLinkType, _Time, _Length, Packet} ->
+            ok = epcap:send(Ref, Packet),
+            resend(Ref)
     end.
-
